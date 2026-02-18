@@ -2,8 +2,9 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
+import { canAccessRoute } from "@/lib/permissions";
 import { ERPLayout } from "@/components/ERPLayout";
 import Login from "./pages/Login";
 import Index from "./pages/Index";
@@ -18,8 +19,21 @@ import NotFound from "./pages/NotFound";
 const queryClient = new QueryClient();
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
+  const location = useLocation();
   if (!isAuthenticated) return <Navigate to="/login" replace />;
+  if (user && !canAccessRoute(user.perfil, location.pathname)) {
+    return (
+      <ERPLayout>
+        <div className="flex items-center justify-center min-h-[60vh] animate-fade-in">
+          <div className="text-center">
+            <h1 className="text-2xl font-bold text-foreground mb-2">Acesso Restrito</h1>
+            <p className="text-muted-foreground">Não tem permissão para aceder a esta página.</p>
+          </div>
+        </div>
+      </ERPLayout>
+    );
+  }
   return <>{children}</>;
 };
 

@@ -26,6 +26,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
+import { canSeeSidebarGroup } from "@/lib/permissions";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
 interface MenuItem {
@@ -139,7 +140,7 @@ export function ERPSidebar() {
         </p>
 
         <ul className="space-y-0.5">
-          {menuItems.map((item) => {
+          {menuItems.filter((item) => user ? canSeeSidebarGroup(user.perfil, item.label) : false).map((item) => {
             const groupOpen = openGroups.includes(item.label);
             const groupActive = isGroupActive(item);
 
