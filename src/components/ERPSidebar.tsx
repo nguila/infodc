@@ -1,28 +1,10 @@
 import { useState } from "react";
 import { useLocation, Link, useNavigate } from "react-router-dom";
 import {
-  Package,
-  Wrench,
-  FolderKanban,
-  Box,
-  PlusCircle,
-  LayoutDashboard,
-  Tags,
-  ClipboardList,
-  Users,
-  Download,
-  Upload,
-  Megaphone,
-  Newspaper,
-  ChevronDown,
-  ChevronRight,
-  Info,
-  Warehouse,
-  MapPin,
-  ShieldCheck,
-  FileSpreadsheet,
-  LogOut,
-  User,
+  Package, Wrench, FolderKanban, Box, PlusCircle, Tags,
+  ClipboardList, Users, Download, Upload, Megaphone, Newspaper,
+  ChevronDown, ChevronRight, Info, Warehouse, MapPin, ShieldCheck,
+  FileSpreadsheet, LogOut, LayoutDashboard,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
@@ -37,37 +19,19 @@ interface MenuItem {
 }
 
 const menuItems: MenuItem[] = [
-  {
-    label: "Produtos",
-    icon: Package,
-    children: [
-      { label: "Lista", icon: ClipboardList, path: "/produtos" },
-      { label: "Categorias", icon: Tags, path: "/produtos/categorias" },
-    ],
-  },
-  {
-    label: "Serviços",
-    icon: Wrench,
-    children: [
-      { label: "Lista", icon: ClipboardList, path: "/servicos" },
-    ],
-  },
-  {
-    label: "Projetos Financiados",
-    icon: FolderKanban,
-    children: [
-      { label: "Lista", icon: ClipboardList, path: "/projetos" },
-    ],
-  },
+  { label: "Dashboard", icon: LayoutDashboard, path: "/" },
+  { label: "Produtos", icon: Package, path: "/produtos" },
+  { label: "Serviços", icon: Wrench, path: "/servicos" },
+  { label: "Projetos Financiados", icon: FolderKanban, path: "/projetos" },
   {
     label: "Stock",
     icon: Box,
     children: [
       { label: "Novo Pedido", icon: PlusCircle, path: "/stock/novo-pedido" },
-      { label: "Dashboard", icon: LayoutDashboard, path: "/stock/dashboard" },
+      { label: "Produtos", icon: Package, path: "/stock/produtos" },
       { label: "Categorias", icon: Tags, path: "/stock/categorias" },
       { label: "Pedidos", icon: ClipboardList, path: "/stock/pedidos" },
-      { label: "Utilizadores", icon: Users, path: "/stock/utilizadores" },
+      { label: "Delegações", icon: Users, path: "/stock/delegacoes" },
     ],
   },
   {
@@ -79,11 +43,11 @@ const menuItems: MenuItem[] = [
     ],
   },
   {
-    label: "Importar / Exportar",
-    icon: FileSpreadsheet,
+    label: "Comunicação",
+    icon: Megaphone,
     children: [
-      { label: "Importar", icon: Upload, path: "/import-export" },
-      { label: "Exportar", icon: Download, path: "/import-export" },
+      { label: "Pedidos", icon: ClipboardList, path: "/comunicacao/pedidos" },
+      { label: "Notícias", icon: Newspaper, path: "/comunicacao/noticias" },
     ],
   },
   {
@@ -91,15 +55,15 @@ const menuItems: MenuItem[] = [
     icon: ShieldCheck,
     children: [
       { label: "Permissões", icon: ShieldCheck, path: "/admin/permissoes" },
-      { label: "Utilizadores", icon: Users, path: "/stock/utilizadores" },
+      { label: "Utilizadores", icon: Users, path: "/admin/utilizadores" },
     ],
   },
   {
-    label: "Comunicação",
-    icon: Megaphone,
+    label: "Importar / Exportar",
+    icon: FileSpreadsheet,
     children: [
-      { label: "Pedidos", icon: ClipboardList, path: "/comunicacao/pedidos" },
-      { label: "Notícias", icon: Newspaper, path: "/comunicacao/noticias" },
+      { label: "Importar", icon: Upload, path: "/import-export" },
+      { label: "Exportar", icon: Download, path: "/import-export" },
     ],
   },
 ];
@@ -140,53 +104,76 @@ export function ERPSidebar() {
         </p>
 
         <ul className="space-y-0.5">
-          {menuItems.filter((item) => user ? canSeeSidebarGroup(user.perfil, item.label) : false).map((item) => {
-            const groupOpen = openGroups.includes(item.label);
-            const groupActive = isGroupActive(item);
+          {menuItems
+            .filter((item) => (user ? canSeeSidebarGroup(user.perfil, item.label) : false))
+            .map((item) => {
+              // Direct link items (no children)
+              if (item.path && !item.children) {
+                return (
+                  <li key={item.label}>
+                    <Link
+                      to={item.path}
+                      className={cn(
+                        "flex items-center w-full gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors",
+                        isActive(item.path)
+                          ? "bg-sidebar-active/15 text-primary"
+                          : "text-sidebar-foreground hover:bg-sidebar-hover hover:text-foreground"
+                      )}
+                    >
+                      <item.icon className="w-[18px] h-[18px] shrink-0" />
+                      <span>{item.label}</span>
+                    </Link>
+                  </li>
+                );
+              }
 
-            return (
-              <li key={item.label}>
-                <button
-                  onClick={() => toggleGroup(item.label)}
-                  className={cn(
-                    "flex items-center w-full gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors",
-                    groupActive
-                      ? "bg-sidebar-active/15 text-primary"
-                      : "text-sidebar-foreground hover:bg-sidebar-hover hover:text-foreground"
-                  )}
-                >
-                  <item.icon className="w-[18px] h-[18px] shrink-0" />
-                  <span className="flex-1 text-left">{item.label}</span>
-                  {groupOpen ? (
-                    <ChevronDown className="w-4 h-4 text-sidebar-muted" />
-                  ) : (
-                    <ChevronRight className="w-4 h-4 text-sidebar-muted" />
-                  )}
-                </button>
+              // Group items with children
+              const groupOpen = openGroups.includes(item.label);
+              const groupActive = isGroupActive(item);
 
-                {groupOpen && item.children && (
-                  <ul className="mt-0.5 ml-4 pl-4 border-l border-sidebar-border space-y-0.5 animate-fade-in">
-                    {item.children.map((child) => (
-                      <li key={child.path + child.label}>
-                        <Link
-                          to={child.path}
-                          className={cn(
-                            "flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors",
-                            isActive(child.path)
-                              ? "bg-primary/15 text-primary font-medium"
-                              : "text-sidebar-foreground hover:bg-sidebar-hover hover:text-foreground"
-                          )}
-                        >
-                          <child.icon className="w-4 h-4 shrink-0" />
-                          <span>{child.label}</span>
-                        </Link>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </li>
-            );
-          })}
+              return (
+                <li key={item.label}>
+                  <button
+                    onClick={() => toggleGroup(item.label)}
+                    className={cn(
+                      "flex items-center w-full gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors",
+                      groupActive
+                        ? "bg-sidebar-active/15 text-primary"
+                        : "text-sidebar-foreground hover:bg-sidebar-hover hover:text-foreground"
+                    )}
+                  >
+                    <item.icon className="w-[18px] h-[18px] shrink-0" />
+                    <span className="flex-1 text-left">{item.label}</span>
+                    {groupOpen ? (
+                      <ChevronDown className="w-4 h-4 text-sidebar-muted" />
+                    ) : (
+                      <ChevronRight className="w-4 h-4 text-sidebar-muted" />
+                    )}
+                  </button>
+
+                  {groupOpen && item.children && (
+                    <ul className="mt-0.5 ml-4 pl-4 border-l border-sidebar-border space-y-0.5 animate-fade-in">
+                      {item.children.map((child) => (
+                        <li key={child.path + child.label}>
+                          <Link
+                            to={child.path}
+                            className={cn(
+                              "flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors",
+                              isActive(child.path)
+                                ? "bg-primary/15 text-primary font-medium"
+                                : "text-sidebar-foreground hover:bg-sidebar-hover hover:text-foreground"
+                            )}
+                          >
+                            <child.icon className="w-4 h-4 shrink-0" />
+                            <span>{child.label}</span>
+                          </Link>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </li>
+              );
+            })}
         </ul>
       </nav>
 

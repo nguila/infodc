@@ -7,13 +7,16 @@ import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { canAccessRoute } from "@/lib/permissions";
 import { ERPLayout } from "@/components/ERPLayout";
 import Login from "./pages/Login";
-import Index from "./pages/Index";
 import Dashboard from "./pages/Dashboard";
 import Produtos from "./pages/Produtos";
+import Servicos from "./pages/Servicos";
+import ProjetosFinanciados from "./pages/ProjetosFinanciados";
 import NovoPedido from "./pages/NovoPedido";
 import Armazem from "./pages/Armazem";
 import Permissoes from "./pages/Permissoes";
 import ImportExport from "./pages/ImportExport";
+import GestaoUtilizadores from "./pages/GestaoUtilizadores";
+import Comunicacao from "./pages/Comunicacao";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -40,7 +43,7 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
 const ERPPage = ({ title }: { title: string }) => (
   <ProtectedRoute>
     <ERPLayout>
-      <div className="flex items-center justify-center min-h-screen animate-fade-in">
+      <div className="flex items-center justify-center min-h-[60vh] animate-fade-in">
         <div className="text-center">
           <h1 className="text-2xl font-bold text-foreground mb-2">{title}</h1>
           <p className="text-muted-foreground">Esta página será implementada em breve.</p>
@@ -56,28 +59,27 @@ const AppRoutes = () => {
   return (
     <Routes>
       <Route path="/login" element={isAuthenticated ? <Navigate to="/" replace /> : <Login />} />
-      <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
-      <Route path="/stock/dashboard" element={<ProtectedRoute><ERPLayout><Dashboard /></ERPLayout></ProtectedRoute>} />
+      <Route path="/" element={<ProtectedRoute><ERPLayout><Dashboard /></ERPLayout></ProtectedRoute>} />
       <Route path="/produtos" element={<ProtectedRoute><ERPLayout><Produtos /></ERPLayout></ProtectedRoute>} />
-      <Route path="/produtos/categorias" element={<ERPPage title="Categorias de Produtos" />} />
-      <Route path="/servicos" element={<ERPPage title="Serviços" />} />
-      <Route path="/projetos" element={<ERPPage title="Projetos Financiados" />} />
+      <Route path="/servicos" element={<ProtectedRoute><ERPLayout><Servicos /></ERPLayout></ProtectedRoute>} />
+      <Route path="/projetos" element={<ProtectedRoute><ERPLayout><ProjetosFinanciados /></ERPLayout></ProtectedRoute>} />
       <Route path="/stock/novo-pedido" element={<ProtectedRoute><ERPLayout><NovoPedido /></ERPLayout></ProtectedRoute>} />
+      <Route path="/stock/produtos" element={<ERPPage title="Lista de Produtos (Stock)" />} />
       <Route path="/stock/categorias" element={<ERPPage title="Categorias de Stock" />} />
       <Route path="/stock/pedidos" element={<ERPPage title="Pedidos de Stock" />} />
-      <Route path="/stock/utilizadores" element={<ERPPage title="Utilizadores" />} />
+      <Route path="/stock/delegacoes" element={<ERPPage title="Delegações" />} />
       <Route path="/armazem" element={<ProtectedRoute><ERPLayout><Armazem /></ERPLayout></ProtectedRoute>} />
       <Route path="/armazem/localizacoes" element={<ERPPage title="Localizações" />} />
       <Route path="/admin/permissoes" element={<ProtectedRoute><ERPLayout><Permissoes /></ERPLayout></ProtectedRoute>} />
+      <Route path="/admin/utilizadores" element={<ProtectedRoute><ERPLayout><GestaoUtilizadores /></ERPLayout></ProtectedRoute>} />
       <Route path="/import-export" element={<ProtectedRoute><ERPLayout><ImportExport /></ERPLayout></ProtectedRoute>} />
-      <Route path="/comunicacao/pedidos" element={<ERPPage title="Pedidos de Comunicação" />} />
+      <Route path="/comunicacao/pedidos" element={<ProtectedRoute><ERPLayout><Comunicacao /></ERPLayout></ProtectedRoute>} />
       <Route path="/comunicacao/noticias" element={<ERPPage title="Notícias" />} />
       <Route path="*" element={<NotFound />} />
     </Routes>
   );
 };
 
-// App root component
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>

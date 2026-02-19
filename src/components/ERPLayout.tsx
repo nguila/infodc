@@ -8,7 +8,7 @@ export function ERPLayout({ children }: ERPLayoutProps) {
   return (
     <div className="flex min-h-screen w-full">
       <ERPSidebar />
-      <main className="flex-1 overflow-auto">
+      <main className="flex-1 overflow-auto light-content bg-background text-foreground">
         {children}
       </main>
     </div>
