@@ -1,40 +1,52 @@
-import { MessageSquare, Calendar, User } from "lucide-react";
+import { FileText, Megaphone, FolderKanban, ExternalLink } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 
-const pedidos = [
-  { id: 1, titulo: "Design de brochura institucional", solicitante: "Ana Silva", data: "2025-01-15", estado: "Pendente", descricao: "Necessidade de brochura A4 para evento de março." },
-  { id: 2, titulo: "Vídeo promocional DataLab", solicitante: "Carlos Mendes", data: "2025-01-12", estado: "Em Progresso", descricao: "Vídeo de 2 minutos para redes sociais sobre o projeto DataLab 4.0." },
-  { id: 3, titulo: "Post LinkedIn — novo parceiro", solicitante: "Maria Santos", data: "2025-01-10", estado: "Concluído", descricao: "Publicação sobre a nova parceria com Fraunhofer Institute." },
-  { id: 4, titulo: "Newsletter mensal janeiro", solicitante: "Rui Ferreira", data: "2025-01-08", estado: "Concluído", descricao: "Newsletter com resumo de atividades de janeiro." },
+const formularios = [
+  {
+    id: 1,
+    titulo: "Requerimento de Pedidos de Comunicação",
+    descricao: "Submissão de pedidos relacionados com ações de comunicação.",
+    icon: Megaphone,
+    url: "https://forms.office.com/Pages/ResponsePage.aspx?id=WjgSWLKyyEaD2WOOg1g5qNFSEvuXwzROiN58fyl-yUdUMEw2VVExNFRIUDRFM1RRVEM5SFYxUU1KNS4u",
+  },
+  {
+    id: 2,
+    titulo: "Formulário Briefing de Logo",
+    descricao: "Pedido de criação ou desenvolvimento de logotipo.",
+    icon: FileText,
+    url: "https://forms.office.com/Pages/ResponsePage.aspx?id=WjgSWLKyyEaD2WOOg1g5qNFSEvuXwzROiN58fyl-yUdUME1LUFZRRUo1ODJYVERSMVkwSVlEVEhMWi4u",
+  },
+  {
+    id: 3,
+    titulo: "Comunicação de Projetos Financiados",
+    descricao: "Submissão de informação para comunicação de projetos financiados.",
+    icon: FolderKanban,
+    url: "https://forms.office.com/Pages/ResponsePage.aspx?id=WjgSWLKyyEaD2WOOg1g5qNFSEvuXwzROiN58fyl-yUdUQU9QSlNORlI5TFdZNVhaS1I0MkxGQjVOWC4u",
+  },
 ];
-
-const estadoColors: Record<string, string> = {
-  Pendente: "bg-amber-100 text-amber-700",
-  "Em Progresso": "bg-blue-100 text-blue-700",
-  Concluído: "bg-green-100 text-green-700",
-};
 
 const Comunicacao = () => (
   <div className="p-8 animate-fade-in">
     <div className="mb-8">
-      <h1 className="text-2xl font-bold text-foreground">Pedidos de Comunicação</h1>
-      <p className="text-sm text-muted-foreground mt-1">Solicitações à equipa de comunicação</p>
+      <h1 className="text-2xl font-bold text-foreground">Novos Pedidos</h1>
+      <p className="text-sm text-muted-foreground mt-1">Acesso rápido a formulários de comunicação</p>
     </div>
 
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-      {pedidos.map((p) => (
-        <Card key={p.id} className="hover:shadow-lg hover:border-primary/20 transition-all">
-          <CardContent className="p-5">
-            <div className="flex items-start justify-between mb-3">
-              <h3 className="text-base font-semibold text-foreground">{p.titulo}</h3>
-              <Badge className={`${estadoColors[p.estado]} text-[11px] border-0 shrink-0 ml-2`}>{p.estado}</Badge>
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+      {formularios.map((f) => (
+        <Card key={f.id} className="hover:shadow-lg hover:border-primary/20 transition-all group flex flex-col">
+          <CardContent className="p-6 flex flex-col items-center text-center gap-4 flex-1">
+            <div className="flex items-center justify-center w-14 h-14 rounded-2xl bg-primary/10 text-primary group-hover:scale-110 transition-transform duration-200">
+              <f.icon className="w-7 h-7" />
             </div>
-            <p className="text-sm text-muted-foreground mb-4">{p.descricao}</p>
-            <div className="flex items-center gap-4 text-xs text-muted-foreground">
-              <span className="flex items-center gap-1"><User className="w-3.5 h-3.5" />{p.solicitante}</span>
-              <span className="flex items-center gap-1"><Calendar className="w-3.5 h-3.5" />{p.data}</span>
-            </div>
+            <h3 className="text-base font-semibold text-foreground leading-tight">{f.titulo}</h3>
+            <p className="text-sm text-muted-foreground">{f.descricao}</p>
+            <Button className="mt-auto gap-2 w-full" asChild>
+              <a href={f.url} target="_blank" rel="noopener noreferrer">
+                <ExternalLink className="w-4 h-4" /> Aceder ao formulário
+              </a>
+            </Button>
           </CardContent>
         </Card>
       ))}

@@ -1,9 +1,9 @@
 import { useState } from "react";
 import { useLocation, Link, useNavigate } from "react-router-dom";
 import {
-  Package, Wrench, FolderKanban, Box, PlusCircle, Tags,
-  ClipboardList, Users, Download, Upload, Megaphone, Newspaper,
-  ChevronDown, ChevronRight, Info, Warehouse, MapPin, ShieldCheck,
+  Package, Wrench, FolderKanban, Box, PlusCircle,
+  ClipboardList, Users, Download, Megaphone, Newspaper,
+  ChevronDown, ChevronRight, Info, ShieldCheck,
   FileSpreadsheet, LogOut, LayoutDashboard, Menu, X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -28,22 +28,17 @@ const menuItems: MenuItem[] = [
     icon: Box,
     children: [
       { label: "Novo Pedido", icon: PlusCircle, path: "/stock/novo-pedido" },
-      { label: "Produtos", icon: Package, path: "/stock/produtos" },
-      { label: "Categorias", icon: Tags, path: "/stock/categorias" },
-      { label: "Pedidos", icon: ClipboardList, path: "/stock/pedidos" },
       { label: "Delegações", icon: Users, path: "/stock/delegacoes" },
-      { label: "Armazéns", icon: Warehouse, path: "/armazem" },
-      { label: "Localizações", icon: MapPin, path: "/armazem/localizacoes" },
-      { label: "Importar", icon: Upload, path: "/import-export" },
-      { label: "Exportar", icon: Download, path: "/import-export" },
+      { label: "Exportar Stock", icon: Download, path: "/stock/exportar" },
     ],
   },
   {
     label: "Comunicação",
     icon: Megaphone,
     children: [
-      { label: "Pedidos", icon: ClipboardList, path: "/comunicacao/pedidos" },
-      { label: "Notícias", icon: Newspaper, path: "/comunicacao/noticias" },
+      { label: "Novos Pedidos", icon: ClipboardList, path: "/comunicacao/pedidos" },
+      { label: "Newsletter", icon: Newspaper, path: "/comunicacao/newsletter" },
+      { label: "Outros Links", icon: FileSpreadsheet, path: "/comunicacao/links" },
     ],
   },
   {
