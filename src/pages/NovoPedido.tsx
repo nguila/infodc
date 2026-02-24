@@ -130,7 +130,7 @@ const NovoPedido = () => {
     limpar();
   };
 
-  const totalItens = produtosPedido.reduce((sum, p) => sum + p.quantidade, 0);
+  
 
   return (
     <div className="p-8 animate-fade-in max-w-5xl">
@@ -288,44 +288,33 @@ const NovoPedido = () => {
           </section>
         </div>
 
-        {/* Coluna lateral – Resumo */}
+        {/* Coluna lateral – Lembretes */}
         <div className="lg:col-span-1">
           <div className="bg-card rounded-xl border border-border p-6 sticky top-8 space-y-5">
-            <h2 className="text-base font-semibold text-foreground">Resumo do Pedido</h2>
+            <h2 className="text-base font-semibold text-foreground">Lembretes Importantes</h2>
 
-            <div className="space-y-3 text-sm">
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Requerente</span>
-                <span className="text-foreground font-medium truncate ml-2 max-w-[140px]">{nomeRequerente || "—"}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Delegação</span>
-                <span className="text-foreground font-medium">{delegacao || "—"}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Evento</span>
-                <span className="text-foreground font-medium">{tipoEvento || "—"}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Data Evento</span>
-                <span className="text-foreground font-medium">{dataEvento ? format(dataEvento, "dd/MM/yyyy") : "—"}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Destino</span>
-                <span className="text-foreground font-medium truncate ml-2 max-w-[140px]">{destino || "—"}</span>
-              </div>
-
-              <hr className="border-border" />
-
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Produtos</span>
-                <span className="text-foreground font-semibold">{produtosPedido.length}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Total de itens</span>
-                <span className="text-foreground font-semibold">{totalItens}</span>
-              </div>
-            </div>
+            <ul className="space-y-3 text-sm text-muted-foreground">
+              <li className="flex gap-2 leading-relaxed">
+                <span className="text-primary mt-0.5">•</span>
+                Verificar stock com antecedência.
+              </li>
+              <li className="flex gap-2 leading-relaxed">
+                <span className="text-primary mt-0.5">•</span>
+                Vigiar os materiais e brindes durante o evento.
+              </li>
+              <li className="flex gap-2 leading-relaxed">
+                <span className="text-primary mt-0.5">•</span>
+                Privilegiar oferta a quem segue o Data CoLAB nas redes sociais.
+              </li>
+              <li className="flex gap-2 leading-relaxed">
+                <span className="text-primary mt-0.5">•</span>
+                Contabilizar e devolver os brindes após o evento.
+              </li>
+              <li className="flex gap-2 leading-relaxed">
+                <span className="text-primary mt-0.5">•</span>
+                Caso existam brindes não utilizados, estes devem ser devolvidos e registados.
+              </li>
+            </ul>
 
             <div className="space-y-2 pt-2">
               <Button onClick={handleSubmit} className="w-full gap-2">
@@ -335,10 +324,6 @@ const NovoPedido = () => {
                 <RotateCcw className="w-4 h-4" /> Limpar
               </Button>
             </div>
-
-            <p className="text-xs text-muted-foreground leading-relaxed">
-              Os materiais solicitados estão sujeitos a disponibilidade em stock. Após submissão, será notificado com a confirmação.
-            </p>
           </div>
         </div>
       </div>
