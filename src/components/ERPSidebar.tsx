@@ -1,11 +1,10 @@
 import { useState } from "react";
 import { useLocation, Link, useNavigate } from "react-router-dom";
 import {
-  Package, Wrench, FolderKanban, Box, PlusCircle,
-  ClipboardList, Users, Download, Megaphone, Newspaper,
+  Package, Wrench, FolderKanban, Box,
+  ClipboardList, Users, Megaphone, Newspaper,
   ChevronDown, ChevronRight, Info, ShieldCheck,
   FileSpreadsheet, LogOut, LayoutDashboard, Menu, X,
-  Warehouse, Upload, Tag, Building2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
@@ -24,19 +23,7 @@ const menuItems: MenuItem[] = [
   { label: "Produtos", icon: Package, path: "/produtos" },
   { label: "Serviços", icon: Wrench, path: "/servicos" },
   { label: "Projetos Financiados", icon: FolderKanban, path: "/projetos" },
-  {
-    label: "Stock",
-    icon: Box,
-    children: [
-      { label: "Produtos", icon: Package, path: "/stock/produtos" },
-      { label: "Categorias", icon: Tag, path: "/stock/categorias" },
-      { label: "Delegações", icon: Building2, path: "/stock/delegacoes" },
-      { label: "Armazém", icon: Warehouse, path: "/stock/armazem" },
-      { label: "Novo Pedido", icon: PlusCircle, path: "/stock/novo-pedido" },
-      { label: "Importar/Exportar", icon: Upload, path: "/stock/importar-exportar" },
-      { label: "Exportar Stock", icon: Download, path: "/stock/exportar" },
-    ],
-  },
+  { label: "Stock", icon: Box, path: "/stock" },
   {
     label: "Comunicação",
     icon: Megaphone,
