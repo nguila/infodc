@@ -1,63 +1,40 @@
 import { useState } from "react";
 import { format } from "date-fns";
 import { pt } from "date-fns/locale";
-import { Plus, Trash2, CalendarIcon, Send, X } from "lucide-react";
+import { Plus, Trash2, CalendarIcon, Send, X, AlertCircle } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Calendar } from "@/components/ui/calendar";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
+  Popover, PopoverContent, PopoverTrigger,
 } from "@/components/ui/popover";
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
+  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
+import { useStockStore } from "@/stores/stockStore";
 
 const armazens = ["SEDE", "Armazém Sul", "Armazém Principal", "Armazém Norte"];
 const tiposEvento = ["Conferência", "Workshop", "Feira", "Formação", "Evento Social", "Reunião Institucional", "Outro"];
-const prioridades = ["Baixa", "Média", "Alta", "Urgente"];
-
-interface ProdutoDisponivel {
-  codigo: string;
-  nome: string;
-  stock: number;
-}
-
-const produtosDisponiveis: ProdutoDisponivel[] = [
-  { codigo: "PRD001", nome: "Canetas Esferográficas", stock: 150 },
-  { codigo: "PRD002", nome: "Teclado Wireless", stock: 25 },
-  { codigo: "PRD003", nome: "T-Shirt Promocional", stock: 8 },
-  { codigo: "PRD004", nome: "Papel A4", stock: 75 },
-  { codigo: "PRD005", nome: "Monitor 27\"", stock: 5 },
-  { codigo: "PRD006", nome: "Quadro Interativo", stock: 2 },
-];
+const prioridades: Array<"Baixa" | "Média" | "Alta" | "Urgente"> = ["Baixa", "Média", "Alta", "Urgente"];
 
 interface ProdutoPedido {
-  codigo: string;
-  nome: string;
+  produtoId: number;
+  produtoNome: string;
   stock: number;
   quantidade: number;
 }
 
 const NovoPedido = () => {
   const { toast } = useToast();
+  const { produtos, criarPedido } = useStockStore();
+
   const [dataPedido, setDataPedido] = useState<Date>();
   const [nomeRequisitante, setNomeRequisitante] = useState("");
   const [email, setEmail] = useState("");
@@ -68,62 +45,76 @@ const NovoPedido = () => {
   const [dataEvento, setDataEvento] = useState<Date>();
   const [dataRecolha, setDataRecolha] = useState<Date>();
   const [responsavelLevantamento, setResponsavelLevantamento] = useState("");
-  const [prioridade, setPrioridade] = useState("Média");
+  const [prioridade, setPrioridade] = useState<"Baixa" | "Média" | "Alta" | "Urgente">("Média");
   const [observacoes, setObservacoes] = useState("");
   const [produtoSelecionado, setProdutoSelecionado] = useState("");
   const [quantidade, setQuantidade] = useState(1);
   const [produtosPedido, setProdutosPedido] = useState<ProdutoPedido[]>([]);
 
+  const produtosComStock = produtos.filter((p) => p.stockAtual > 0);
+
   const adicionarProduto = () => {
-    const prod = produtosDisponiveis.find((p) => p.codigo === produtoSelecionado);
+    const prod = produtos.find((p) => String(p.id) === produtoSelecionado);
     if (!prod || quantidade < 1) return;
-    const existing = produtosPedido.find((pp) => pp.codigo === prod.codigo);
+
+    const existing = produtosPedido.find((pp) => pp.produtoId === prod.id);
+    const totalQtd = (existing?.quantidade || 0) + quantidade;
+
+    if (totalQtd > prod.stockAtual) {
+      toast({ title: "Stock insuficiente", description: `"${prod.nome}" tem apenas ${prod.stockAtual} un. disponíveis.`, variant: "destructive" });
+      return;
+    }
+
     if (existing) {
       setProdutosPedido((prev) =>
-        prev.map((pp) => pp.codigo === prod.codigo ? { ...pp, quantidade: pp.quantidade + quantidade } : pp)
+        prev.map((pp) => pp.produtoId === prod.id ? { ...pp, quantidade: pp.quantidade + quantidade } : pp)
       );
     } else {
-      setProdutosPedido((prev) => [...prev, { codigo: prod.codigo, nome: prod.nome, stock: prod.stock, quantidade }]);
+      setProdutosPedido((prev) => [...prev, { produtoId: prod.id, produtoNome: prod.nome, stock: prod.stockAtual, quantidade }]);
     }
     setProdutoSelecionado("");
     setQuantidade(1);
   };
 
-  const removerProduto = (codigo: string) => {
-    setProdutosPedido((prev) => prev.filter((pp) => pp.codigo !== codigo));
+  const removerProduto = (produtoId: number) => {
+    setProdutosPedido((prev) => prev.filter((pp) => pp.produtoId !== produtoId));
   };
 
   const limpar = () => {
-    setDataPedido(undefined);
-    setNomeRequisitante("");
-    setEmail("");
-    setArmazem("");
-    setDestino("");
-    setDescricaoDestino("");
-    setTipoEvento("");
-    setDataEvento(undefined);
-    setDataRecolha(undefined);
-    setResponsavelLevantamento("");
-    setPrioridade("Média");
-    setObservacoes("");
-    setProdutoSelecionado("");
-    setQuantidade(1);
-    setProdutosPedido([]);
+    setDataPedido(undefined); setNomeRequisitante(""); setEmail(""); setArmazem("");
+    setDestino(""); setDescricaoDestino(""); setTipoEvento(""); setDataEvento(undefined);
+    setDataRecolha(undefined); setResponsavelLevantamento(""); setPrioridade("Média");
+    setObservacoes(""); setProdutoSelecionado(""); setQuantidade(1); setProdutosPedido([]);
   };
 
   const handleSubmit = () => {
     if (!dataPedido || !nomeRequisitante || produtosPedido.length === 0) {
-      toast({
-        title: "Campos obrigatórios",
-        description: "Preencha a data do pedido, nome do requisitante e adicione pelo menos um produto.",
-        variant: "destructive",
-      });
+      toast({ title: "Campos obrigatórios", description: "Preencha a data, nome do requisitante e adicione pelo menos um produto.", variant: "destructive" });
       return;
     }
-    toast({
-      title: "Pedido criado com sucesso!",
-      description: `Pedido com ${produtosPedido.length} produto(s) registado.`,
+
+    const err = criarPedido({
+      dataPedido: dataPedido.toISOString(),
+      nomeRequisitante,
+      email,
+      origem: armazem,
+      destino,
+      descricaoDestino,
+      tipoEvento,
+      dataEvento: dataEvento?.toISOString() || "",
+      dataRecolha: dataRecolha?.toISOString() || "",
+      responsavelLevantamento,
+      prioridade,
+      observacoes,
+      produtos: produtosPedido.map((pp) => ({ produtoId: pp.produtoId, produtoNome: pp.produtoNome, quantidade: pp.quantidade })),
     });
+
+    if (err) {
+      toast({ title: "Erro ao criar pedido", description: err, variant: "destructive" });
+      return;
+    }
+
+    toast({ title: "Pedido criado com sucesso!", description: `Pedido com ${produtosPedido.length} produto(s) registado. Stock atualizado.` });
     limpar();
   };
 
@@ -151,9 +142,7 @@ const NovoPedido = () => {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Coluna principal */}
         <div className="lg:col-span-2 space-y-6">
-          {/* Dados gerais */}
           <section className="bg-card rounded-xl border border-border p-6 space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <DateField label="Data do Pedido" required value={dataPedido} onChange={setDataPedido} />
@@ -185,7 +174,6 @@ const NovoPedido = () => {
             </div>
           </section>
 
-          {/* Evento e logística */}
           <section className="bg-card rounded-xl border border-border p-6 space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
@@ -205,7 +193,7 @@ const NovoPedido = () => {
               </div>
               <div className="space-y-2">
                 <Label>Prioridade</Label>
-                <Select value={prioridade} onValueChange={setPrioridade}>
+                <Select value={prioridade} onValueChange={(v) => setPrioridade(v as typeof prioridade)}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
                     {prioridades.map((p) => <SelectItem key={p} value={p}>{p}</SelectItem>)}
@@ -215,7 +203,6 @@ const NovoPedido = () => {
             </div>
           </section>
 
-          {/* Produtos */}
           <section className="bg-card rounded-xl border border-border p-6 space-y-4">
             <h2 className="text-base font-semibold text-foreground">Adicionar Produtos</h2>
             <div className="flex flex-wrap items-end gap-3">
@@ -224,9 +211,9 @@ const NovoPedido = () => {
                 <Select value={produtoSelecionado} onValueChange={setProdutoSelecionado}>
                   <SelectTrigger><SelectValue placeholder="Selecionar produto" /></SelectTrigger>
                   <SelectContent>
-                    {produtosDisponiveis.map((p) => (
-                      <SelectItem key={p.codigo} value={p.codigo}>
-                        {p.codigo} - {p.nome} (Stock: {p.stock})
+                    {produtosComStock.map((p) => (
+                      <SelectItem key={p.id} value={String(p.id)}>
+                        {p.nome} (Stock: {p.stockAtual})
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -246,22 +233,23 @@ const NovoPedido = () => {
                 <Table>
                   <TableHeader>
                     <TableRow className="bg-secondary/40">
-                      <TableHead>Código</TableHead>
                       <TableHead>Produto</TableHead>
-                      <TableHead className="text-right">Stock</TableHead>
+                      <TableHead className="text-right">Stock Disp.</TableHead>
                       <TableHead className="text-right">Qtd.</TableHead>
                       <TableHead className="text-right w-[60px]" />
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {produtosPedido.map((pp) => (
-                      <TableRow key={pp.codigo}>
-                        <TableCell className="text-muted-foreground">{pp.codigo}</TableCell>
-                        <TableCell className="font-medium text-foreground">{pp.nome}</TableCell>
+                      <TableRow key={pp.produtoId}>
+                        <TableCell className="font-medium text-foreground">{pp.produtoNome}</TableCell>
                         <TableCell className="text-right text-muted-foreground">{pp.stock}</TableCell>
-                        <TableCell className="text-right text-foreground font-medium">{pp.quantidade}</TableCell>
+                        <TableCell className={cn("text-right font-medium", pp.quantidade > pp.stock ? "text-destructive" : "text-foreground")}>
+                          {pp.quantidade}
+                          {pp.quantidade > pp.stock && <AlertCircle className="w-3 h-3 inline ml-1" />}
+                        </TableCell>
                         <TableCell className="text-right">
-                          <Button variant="ghost" size="icon" onClick={() => removerProduto(pp.codigo)} className="h-8 w-8">
+                          <Button variant="ghost" size="icon" onClick={() => removerProduto(pp.produtoId)} className="h-8 w-8">
                             <Trash2 className="w-4 h-4 text-destructive" />
                           </Button>
                         </TableCell>
@@ -277,57 +265,29 @@ const NovoPedido = () => {
             )}
           </section>
 
-          {/* Observações */}
           <section className="bg-card rounded-xl border border-border p-6 space-y-4">
             <h2 className="text-base font-semibold text-foreground">Observações</h2>
-            <Textarea
-              value={observacoes}
-              onChange={(e) => setObservacoes(e.target.value)}
-              rows={3}
-              placeholder="Informações adicionais sobre o pedido..."
-            />
+            <Textarea value={observacoes} onChange={(e) => setObservacoes(e.target.value)} rows={3} placeholder="Informações adicionais sobre o pedido..." />
           </section>
         </div>
 
-        {/* Coluna lateral – Lembretes */}
         <div className="lg:col-span-1">
           <div className="bg-card rounded-xl border border-border p-6 sticky top-8 space-y-5">
             <h2 className="text-base font-semibold text-foreground">Lembretes Importantes:</h2>
-
             <ul className="space-y-3 text-sm text-muted-foreground">
-              <li className="flex gap-2 leading-relaxed">
-                <span className="text-primary mt-0.5">•</span>
-                Verificar stock com antecedência.
-              </li>
-              <li className="flex gap-2 leading-relaxed">
-                <span className="text-primary mt-0.5">•</span>
-                Vigiar os materiais e brindes durante o evento.
-              </li>
-              <li className="flex gap-2 leading-relaxed">
-                <span className="text-primary mt-0.5">•</span>
-                Privilegiar oferta a quem segue o Data CoLAB nas redes sociais.
-              </li>
-              <li className="flex gap-2 leading-relaxed">
-                <span className="text-primary mt-0.5">•</span>
-                Contabilizar e devolver os brindes após o evento.
-              </li>
-              <li className="flex gap-2 leading-relaxed">
-                <span className="text-primary mt-0.5">•</span>
-                Caso existam brindes não utilizados, estes devem ser devolvidos e registados.
-              </li>
+              <li className="flex gap-2 leading-relaxed"><span className="text-primary mt-0.5">•</span>Verificar stock com antecedência.</li>
+              <li className="flex gap-2 leading-relaxed"><span className="text-primary mt-0.5">•</span>Vigiar os materiais e brindes durante o evento.</li>
+              <li className="flex gap-2 leading-relaxed"><span className="text-primary mt-0.5">•</span>Privilegiar oferta a quem segue o Data CoLAB nas redes sociais.</li>
+              <li className="flex gap-2 leading-relaxed"><span className="text-primary mt-0.5">•</span>Contabilizar e devolver os brindes após o evento.</li>
+              <li className="flex gap-2 leading-relaxed"><span className="text-primary mt-0.5">•</span>Caso existam brindes não utilizados, estes devem ser devolvidos e registados.</li>
             </ul>
           </div>
         </div>
       </div>
 
-      {/* Botões de ação */}
       <div className="flex justify-end gap-3 mt-6">
-        <Button variant="outline" onClick={limpar} className="gap-2">
-          <X className="w-4 h-4" /> Cancelar
-        </Button>
-        <Button onClick={handleSubmit} className="gap-2">
-          <Send className="w-4 h-4" /> Criar Pedido
-        </Button>
+        <Button variant="outline" onClick={limpar} className="gap-2"><X className="w-4 h-4" /> Cancelar</Button>
+        <Button onClick={handleSubmit} className="gap-2"><Send className="w-4 h-4" /> Criar Pedido</Button>
       </div>
     </div>
   );

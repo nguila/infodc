@@ -24,13 +24,13 @@ import { useStockStore } from "@/stores/stockStore";
 
 // ─── OVERVIEW TAB ───
 const OverviewTab = () => {
-  const { produtos, pedidos, movimentos, getEstado } = useStockStore();
+  const { produtos, pedidosLevantamento, movimentos, getEstado } = useStockStore();
 
   const totalProdutos = produtos.length;
   const totalUnidades = produtos.reduce((s, p) => s + p.stockAtual, 0);
   const abaixoMinimo = produtos.filter((p) => p.stockAtual < p.stockMinimo && p.stockAtual > 0).length;
   const esgotados = produtos.filter((p) => p.stockAtual === 0).length;
-  const pedidosAtivos = pedidos.filter((p) => p.estado === "Ativo").length;
+  const pedidosAtivos = pedidosLevantamento.filter((p) => p.estado === "Ativo").length;
   const totalLevantamentos = movimentos.filter((m) => m.tipo === "levantamento").length;
 
   const produtosCriticos = produtos
@@ -47,7 +47,6 @@ const OverviewTab = () => {
 
   return (
     <div className="space-y-6">
-      {/* Summary Cards */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
         {cards.map((c) => (
           <Card key={c.label}>
@@ -60,7 +59,6 @@ const OverviewTab = () => {
         ))}
       </div>
 
-      {/* Critical Products */}
       {produtosCriticos.length > 0 && (
         <div className="bg-card rounded-xl border border-border overflow-hidden">
           <div className="p-4 border-b border-border">
@@ -102,7 +100,6 @@ const OverviewTab = () => {
         </div>
       )}
 
-      {/* Movements Table */}
       <div className="bg-card rounded-xl border border-border overflow-hidden">
         <div className="p-4 border-b border-border">
           <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
@@ -110,7 +107,7 @@ const OverviewTab = () => {
             Últimos Movimentos
           </h3>
         </div>
-        {movimentos.length === 0 ? (
+        {pedidosLevantamento.length === 0 ? (
           <p className="text-sm text-muted-foreground text-center py-8">Sem movimentos registados.</p>
         ) : (
           <Table>
@@ -126,8 +123,7 @@ const OverviewTab = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {/* Group by pedido for better display */}
-              {pedidos.map((ped) => (
+              {pedidosLevantamento.map((ped) => (
                 <TableRow key={ped.id} className="hover:bg-muted/30">
                   <TableCell className="font-medium text-foreground">{ped.produtoNome}</TableCell>
                   <TableCell className="text-foreground">{ped.quantidadeLevantada}</TableCell>
@@ -241,25 +237,23 @@ const StockTab = () => {
 
 // ─── PEDIDOS ATIVOS TAB ───
 const PedidosAtivosTab = () => {
-  const { produtos, pedidos, criarLevantamento, registarDevolucao } = useStockStore();
+  const { produtos, pedidosLevantamento, criarLevantamento, registarDevolucao } = useStockStore();
   const { toast } = useToast();
 
   const [levDialog, setLevDialog] = useState(false);
   const [devDialog, setDevDialog] = useState(false);
   const [devPedidoId, setDevPedidoId] = useState<number | null>(null);
 
-  // Levantamento form
   const [levProduto, setLevProduto] = useState("");
   const [levQtd, setLevQtd] = useState("");
   const [levEvento, setLevEvento] = useState("");
   const [levResp, setLevResp] = useState("");
   const [levData, setLevData] = useState(new Date().toISOString().slice(0, 10));
 
-  // Devolução form
   const [devQtd, setDevQtd] = useState("");
   const [devData, setDevData] = useState(new Date().toISOString().slice(0, 10));
 
-  const pedidosAtivos = pedidos.filter((p) => p.estado === "Ativo");
+  const pedidosAtivos = pedidosLevantamento.filter((p) => p.estado === "Ativo");
 
   const handleLevantamento = () => {
     const err = criarLevantamento(Number(levProduto), Number(levQtd), levResp, levEvento, levData);
@@ -291,7 +285,7 @@ const PedidosAtivosTab = () => {
     setDevDialog(true);
   };
 
-  const selectedPedido = pedidos.find((p) => p.id === devPedidoId);
+  const selectedPedido = pedidosLevantamento.find((p) => p.id === devPedidoId);
 
   return (
     <div className="space-y-4">
@@ -436,8 +430,8 @@ const PedidosAtivosTab = () => {
 
 // ─── HISTÓRICO TAB ───
 const HistoricoTab = () => {
-  const { pedidos } = useStockStore();
-  const concluidos = pedidos.filter((p) => p.estado === "Concluído");
+  const { pedidosLevantamento } = useStockStore();
+  const concluidos = pedidosLevantamento.filter((p) => p.estado === "Concluído");
 
   return (
     <div className="bg-card rounded-xl border border-border overflow-hidden">
