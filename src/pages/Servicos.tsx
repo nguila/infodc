@@ -11,7 +11,7 @@ const servicos = [
     icon: BarChart3,
     cor: "bg-blue-500/10 text-blue-600",
     iconBg: "bg-blue-500",
-    descricao: "Transformamos dados em decisões estratégicas com dashboards, modelos preditivos e automação de relatórios.",
+    
     areas: [
       "Desenvolvimento de dashboards personalizados",
       "Implementação de data warehouses",
@@ -29,7 +29,7 @@ const servicos = [
     icon: Cpu,
     cor: "bg-emerald-500/10 text-emerald-600",
     iconBg: "bg-emerald-500",
-    descricao: "Soluções de monitorização, automação industrial e edge computing para a Indústria 4.0.",
+    
     areas: [
       "Soluções de monitorização",
       "Sistemas de automação industrial",
@@ -45,7 +45,7 @@ const servicos = [
     icon: Scale,
     cor: "bg-amber-500/10 text-amber-600",
     iconBg: "bg-amber-500",
-    descricao: "Consultoria em normativas, transformação digital, governança de dados e rastreabilidade de produtos.",
+    
     areas: [
       "Consultoria para aplicação de normativas (incl. ESG, RGPC)",
       "Consultoria em transformação digital e otimização de processos usando IA",
@@ -59,7 +59,7 @@ const servicos = [
     icon: GraduationCap,
     cor: "bg-purple-500/10 text-purple-600",
     iconBg: "bg-purple-500",
-    descricao: "Cursos especializados em desenvolvimento pessoal, gestão, ciências informáticas e informática.",
+    
     areas: [
       "Desenvolvimento pessoal",
       "Gestão e administração",
@@ -80,11 +80,6 @@ const ServicoModal = ({ servico, onClose }: { servico: typeof servicos[0]; onClo
           <servico.icon className="w-7 h-7" />
         </div>
         <h2 className="text-xl font-bold text-foreground leading-tight">{servico.titulo}</h2>
-      </div>
-
-      <div className="mb-4">
-        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">Descrição</p>
-        <p className="text-sm text-foreground">{servico.descricao}</p>
       </div>
 
       <div>
