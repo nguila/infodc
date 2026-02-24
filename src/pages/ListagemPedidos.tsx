@@ -1,0 +1,258 @@
+import { useState } from "react";
+import { format } from "date-fns";
+import { pt } from "date-fns/locale";
+import { Search, ClipboardList, CalendarIcon, Eye } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
+import {
+  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
+} from "@/components/ui/table";
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from "@/components/ui/select";
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  Popover, PopoverContent, PopoverTrigger,
+} from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { cn } from "@/lib/utils";
+import { useStockStore, type Pedido } from "@/stores/stockStore";
+
+const estadoStyles: Record<string, string> = {
+  Pendente: "bg-amber-100 text-amber-700",
+  Aprovado: "bg-blue-100 text-blue-700",
+  "Em Preparação": "bg-purple-100 text-purple-700",
+  Entregue: "bg-green-100 text-green-700",
+  Concluído: "bg-green-100 text-green-700",
+  Cancelado: "bg-red-100 text-red-700",
+};
+
+const prioridadeStyles: Record<string, string> = {
+  Baixa: "bg-secondary text-muted-foreground",
+  Média: "bg-blue-100 text-blue-700",
+  Alta: "bg-amber-100 text-amber-700",
+  Urgente: "bg-red-100 text-red-700",
+};
+
+const ListagemPedidos = () => {
+  const { pedidos, atualizarEstadoPedido } = useStockStore();
+  const [search, setSearch] = useState("");
+  const [filtroEstado, setFiltroEstado] = useState("todos");
+  const [filtroPrioridade, setFiltroPrioridade] = useState("todos");
+  const [filtroDataDe, setFiltroDataDe] = useState<Date>();
+  const [filtroDataAte, setFiltroDataAte] = useState<Date>();
+  const [detalhePedido, setDetalhePedido] = useState<Pedido | null>(null);
+
+  const filtered = pedidos.filter((p) => {
+    if (filtroEstado !== "todos" && p.estado !== filtroEstado) return false;
+    if (filtroPrioridade !== "todos" && p.prioridade !== filtroPrioridade) return false;
+    if (filtroDataDe && new Date(p.dataPedido) < filtroDataDe) return false;
+    if (filtroDataAte) {
+      const ate = new Date(filtroDataAte);
+      ate.setHours(23, 59, 59);
+      if (new Date(p.dataPedido) > ate) return false;
+    }
+    if (search) {
+      const s = search.toLowerCase();
+      return p.nomeRequisitante.toLowerCase().includes(s) ||
+        p.tipoEvento.toLowerCase().includes(s) ||
+        p.destino.toLowerCase().includes(s) ||
+        p.produtos.some((pp) => pp.produtoNome.toLowerCase().includes(s));
+    }
+    return true;
+  }).sort((a, b) => new Date(b.criadoEm).getTime() - new Date(a.criadoEm).getTime());
+
+  const totalProdutos = (p: Pedido) => p.produtos.reduce((s, pp) => s + pp.quantidade, 0);
+
+  const DateFilter = ({ label, value, onChange }: { label: string; value: Date | undefined; onChange: (d: Date | undefined) => void }) => (
+    <Popover>
+      <PopoverTrigger asChild>
+        <Button variant="outline" size="sm" className={cn("gap-2 text-xs", !value && "text-muted-foreground")}>
+          <CalendarIcon className="w-3 h-3" />
+          {value ? format(value, "dd/MM/yyyy") : label}
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-auto p-0" align="start">
+        <Calendar mode="single" selected={value} onSelect={onChange} initialFocus className="p-3 pointer-events-auto" />
+      </PopoverContent>
+    </Popover>
+  );
+
+  return (
+    <div className="p-8 animate-fade-in">
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
+          <ClipboardList className="w-6 h-6 text-primary" />
+          Listagem de Pedidos
+        </h1>
+        <p className="text-sm text-muted-foreground mt-1">Todos os pedidos de stock criados</p>
+      </div>
+
+      {/* Summary */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+        {[
+          { label: "Total", value: pedidos.length, color: "text-primary" },
+          { label: "Pendentes", value: pedidos.filter((p) => p.estado === "Pendente").length, color: "text-amber-600" },
+          { label: "Em Curso", value: pedidos.filter((p) => ["Aprovado", "Em Preparação"].includes(p.estado)).length, color: "text-blue-600" },
+          { label: "Concluídos", value: pedidos.filter((p) => p.estado === "Concluído" || p.estado === "Entregue").length, color: "text-green-600" },
+        ].map((c) => (
+          <Card key={c.label}>
+            <CardContent className="p-4 text-center">
+              <p className={`text-2xl font-bold ${c.color}`}>{c.value}</p>
+              <p className="text-[11px] text-muted-foreground">{c.label}</p>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
+      {/* Filters */}
+      <div className="flex flex-wrap gap-3 items-center mb-4">
+        <div className="relative flex-1 min-w-[200px] max-w-sm">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <Input placeholder="Pesquisar pedido..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9 h-9" />
+        </div>
+        <Select value={filtroEstado} onValueChange={setFiltroEstado}>
+          <SelectTrigger className="w-[150px] h-9"><SelectValue placeholder="Estado" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="todos">Todos os estados</SelectItem>
+            <SelectItem value="Pendente">Pendente</SelectItem>
+            <SelectItem value="Aprovado">Aprovado</SelectItem>
+            <SelectItem value="Em Preparação">Em Preparação</SelectItem>
+            <SelectItem value="Entregue">Entregue</SelectItem>
+            <SelectItem value="Concluído">Concluído</SelectItem>
+            <SelectItem value="Cancelado">Cancelado</SelectItem>
+          </SelectContent>
+        </Select>
+        <Select value={filtroPrioridade} onValueChange={setFiltroPrioridade}>
+          <SelectTrigger className="w-[140px] h-9"><SelectValue placeholder="Prioridade" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="todos">Todas</SelectItem>
+            <SelectItem value="Baixa">Baixa</SelectItem>
+            <SelectItem value="Média">Média</SelectItem>
+            <SelectItem value="Alta">Alta</SelectItem>
+            <SelectItem value="Urgente">Urgente</SelectItem>
+          </SelectContent>
+        </Select>
+        <DateFilter label="De" value={filtroDataDe} onChange={setFiltroDataDe} />
+        <DateFilter label="Até" value={filtroDataAte} onChange={setFiltroDataAte} />
+        {(filtroEstado !== "todos" || filtroPrioridade !== "todos" || filtroDataDe || filtroDataAte) && (
+          <Button variant="ghost" size="sm" onClick={() => { setFiltroEstado("todos"); setFiltroPrioridade("todos"); setFiltroDataDe(undefined); setFiltroDataAte(undefined); }}>
+            Limpar filtros
+          </Button>
+        )}
+      </div>
+
+      {/* Table */}
+      <div className="bg-card rounded-xl border border-border overflow-hidden">
+        <Table>
+          <TableHeader>
+            <TableRow className="bg-secondary/30">
+              <TableHead>Data</TableHead>
+              <TableHead>Requisitante</TableHead>
+              <TableHead>Evento</TableHead>
+              <TableHead>Origem</TableHead>
+              <TableHead className="text-center">Produtos</TableHead>
+              <TableHead>Prioridade</TableHead>
+              <TableHead>Estado</TableHead>
+              <TableHead className="text-right">Ações</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {filtered.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={8} className="text-center py-10 text-muted-foreground">
+                  Sem pedidos registados.
+                </TableCell>
+              </TableRow>
+            ) : filtered.map((p) => (
+              <TableRow key={p.id} className="hover:bg-muted/30">
+                <TableCell className="text-muted-foreground text-sm">
+                  {format(new Date(p.dataPedido), "dd/MM/yyyy")}
+                </TableCell>
+                <TableCell className="font-medium text-foreground">{p.nomeRequisitante}</TableCell>
+                <TableCell className="text-muted-foreground text-sm">{p.tipoEvento || "—"}</TableCell>
+                <TableCell className="text-muted-foreground text-sm">{p.origem || "—"}</TableCell>
+                <TableCell className="text-center font-medium text-foreground">{totalProdutos(p)}</TableCell>
+                <TableCell>
+                  <Badge className={`${prioridadeStyles[p.prioridade]} border-0 text-[11px]`}>{p.prioridade}</Badge>
+                </TableCell>
+                <TableCell>
+                  <Select value={p.estado} onValueChange={(v) => atualizarEstadoPedido(p.id, v as Pedido["estado"])}>
+                    <SelectTrigger className="h-7 w-[130px] text-xs border-0 p-0">
+                      <Badge className={`${estadoStyles[p.estado]} border-0 text-[11px]`}>{p.estado}</Badge>
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Pendente">Pendente</SelectItem>
+                      <SelectItem value="Aprovado">Aprovado</SelectItem>
+                      <SelectItem value="Em Preparação">Em Preparação</SelectItem>
+                      <SelectItem value="Entregue">Entregue</SelectItem>
+                      <SelectItem value="Concluído">Concluído</SelectItem>
+                      <SelectItem value="Cancelado">Cancelado</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </TableCell>
+                <TableCell className="text-right">
+                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setDetalhePedido(p)}>
+                    <Eye className="w-4 h-4" />
+                  </Button>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
+      <p className="text-xs text-muted-foreground mt-2">{filtered.length} pedido(s)</p>
+
+      {/* Detail dialog */}
+      <Dialog open={!!detalhePedido} onOpenChange={() => setDetalhePedido(null)}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Detalhes do Pedido</DialogTitle>
+          </DialogHeader>
+          {detalhePedido && (
+            <div className="space-y-4 text-sm">
+              <div className="grid grid-cols-2 gap-3">
+                <div><span className="text-muted-foreground">Data:</span> <strong>{format(new Date(detalhePedido.dataPedido), "dd/MM/yyyy")}</strong></div>
+                <div><span className="text-muted-foreground">Requisitante:</span> <strong>{detalhePedido.nomeRequisitante}</strong></div>
+                <div><span className="text-muted-foreground">Email:</span> {detalhePedido.email || "—"}</div>
+                <div><span className="text-muted-foreground">Origem:</span> {detalhePedido.origem || "—"}</div>
+                <div><span className="text-muted-foreground">Destino:</span> {detalhePedido.destino || "—"}</div>
+                <div><span className="text-muted-foreground">Evento:</span> {detalhePedido.tipoEvento || "—"}</div>
+                <div><span className="text-muted-foreground">Responsável:</span> {detalhePedido.responsavelLevantamento || "—"}</div>
+                <div><span className="text-muted-foreground">Prioridade:</span> <Badge className={`${prioridadeStyles[detalhePedido.prioridade]} border-0 text-[11px]`}>{detalhePedido.prioridade}</Badge></div>
+              </div>
+              {detalhePedido.observacoes && (
+                <div><span className="text-muted-foreground">Observações:</span> <p className="mt-1">{detalhePedido.observacoes}</p></div>
+              )}
+              <div>
+                <h4 className="font-semibold mb-2">Produtos ({detalhePedido.produtos.length})</h4>
+                <Table>
+                  <TableHeader>
+                    <TableRow className="bg-secondary/30">
+                      <TableHead>Produto</TableHead>
+                      <TableHead className="text-right">Qtd.</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {detalhePedido.produtos.map((pp, i) => (
+                      <TableRow key={i}>
+                        <TableCell>{pp.produtoNome}</TableCell>
+                        <TableCell className="text-right font-medium">{pp.quantidade}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+};
+
+export default ListagemPedidos;

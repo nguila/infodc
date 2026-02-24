@@ -3,7 +3,7 @@ import { useLocation, Link, useNavigate } from "react-router-dom";
 import {
   Package, Wrench, FolderKanban, Box,
   ClipboardList, Users, Megaphone, Newspaper,
-  ChevronDown, Info, ShieldCheck,
+  ChevronDown, Info, ShieldCheck, List,
   FileSpreadsheet, LogOut, LayoutDashboard,
   ChevronsLeft, ChevronsRight, BarChart3, History, RotateCcw, FilePlus2,
 } from "lucide-react";
@@ -42,6 +42,7 @@ const menuItems: MenuItem[] = [
       { label: "Produtos", icon: Package, path: "/stock/produtos" },
       { label: "Pedidos Ativos", icon: ClipboardList, path: "/stock/pedidos" },
       { label: "Novo Pedido", icon: FilePlus2, path: "/stock/novo-pedido" },
+      { label: "Listagem Pedidos", icon: List, path: "/stock/listagem-pedidos" },
       { label: "Devolução", icon: RotateCcw, path: "/stock/devolucao" },
       { label: "Histórico", icon: History, path: "/stock/historico" },
     ],
