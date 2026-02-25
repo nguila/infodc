@@ -157,7 +157,9 @@ const StockTab = () => {
   const [search, setSearch] = useState("");
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [editingProduct, setEditingProduct] = useState<any>(null);
+  const [deletingProduct, setDeletingProduct] = useState<any>(null);
   const [newNome, setNewNome] = useState("");
   const [newTipologia, setNewTipologia] = useState("");
   const [newLocalizacao, setNewLocalizacao] = useState("");
@@ -228,9 +230,12 @@ const StockTab = () => {
     setEditingProduct(null);
   };
 
-  const handleDeleteProduct = (p: any) => {
-    eliminarProduto(p.id);
-    toast({ title: "Produto eliminado", description: `"${p.nome}" foi removido do stock.` });
+  const handleDeleteProduct = () => {
+    if (!deletingProduct) return;
+    eliminarProduto(deletingProduct.id);
+    toast({ title: "Produto eliminado", description: `"${deletingProduct.nome}" foi removido do stock.` });
+    setShowDeleteDialog(false);
+    setDeletingProduct(null);
   };
 
   return (
@@ -309,7 +314,7 @@ const StockTab = () => {
                       <Button variant="ghost" size="icon" onClick={() => openEditDialog(p)}>
                         <Edit className="w-4 h-4" />
                       </Button>
-                      <Button variant="ghost" size="icon" onClick={() => handleDeleteProduct(p)}>
+                      <Button variant="ghost" size="icon" onClick={() => { setDeletingProduct(p); setShowDeleteDialog(true); }}>
                         <Trash2 className="w-4 h-4 text-destructive" />
                       </Button>
                     </div>
@@ -410,6 +415,22 @@ const StockTab = () => {
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowEditDialog(false)}>Cancelar</Button>
             <Button onClick={handleEditProduct} disabled={!newNome.trim()}>Guardar</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Eliminar Produto</DialogTitle>
+            <DialogDescription>
+              Tem a certeza que deseja eliminar o produto <strong>"{deletingProduct?.nome}"</strong>? Esta ação não pode ser revertida.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowDeleteDialog(false)}>Cancelar</Button>
+            <Button variant="destructive" onClick={handleDeleteProduct}>Eliminar</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
