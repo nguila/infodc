@@ -19,6 +19,7 @@ import NovoPedido from "./pages/NovoPedido";
 import ListagemPedidos from "./pages/ListagemPedidos";
 // Permissoes removed - permissions managed via user creation
 import GestaoUtilizadores from "./pages/GestaoUtilizadores";
+import BackupRestore from "./pages/BackupRestore";
 import Comunicacao from "./pages/Comunicacao";
 import Newsletter from "./pages/Newsletter";
 import OutrosLinks from "./pages/OutrosLinks";
@@ -73,6 +74,7 @@ const AppRoutes = () => {
       <Route path="/comunicacao/links" element={<P><OutrosLinks /></P>} />
       {/* Permissões route removed - managed in user creation */}
       <Route path="/admin/utilizadores" element={<P><GestaoUtilizadores /></P>} />
+      <Route path="/admin/backup" element={<P><BackupRestore /></P>} />
       <Route path="*" element={<NotFound />} />
     </Routes>
   );
