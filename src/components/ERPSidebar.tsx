@@ -60,7 +60,6 @@ const menuItems: MenuItem[] = [
     label: "Administração",
     icon: ShieldCheck,
     children: [
-      { label: "Permissões", icon: ShieldCheck, path: "/admin/permissoes" },
       { label: "Utilizadores", icon: Users, path: "/admin/utilizadores" },
     ],
   },

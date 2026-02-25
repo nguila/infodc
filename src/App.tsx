@@ -15,7 +15,7 @@ import StockBrindes from "./pages/StockBrindes";
 import StockDevolucao from "./pages/StockDevolucao";
 import NovoPedido from "./pages/NovoPedido";
 import ListagemPedidos from "./pages/ListagemPedidos";
-import Permissoes from "./pages/Permissoes";
+// Permissoes removed - permissions managed via user creation
 import GestaoUtilizadores from "./pages/GestaoUtilizadores";
 import Comunicacao from "./pages/Comunicacao";
 import Newsletter from "./pages/Newsletter";
@@ -67,7 +67,7 @@ const AppRoutes = () => {
       <Route path="/comunicacao/pedidos" element={<P><Comunicacao /></P>} />
       <Route path="/comunicacao/newsletter" element={<P><Newsletter /></P>} />
       <Route path="/comunicacao/links" element={<P><OutrosLinks /></P>} />
-      <Route path="/admin/permissoes" element={<P><Permissoes /></P>} />
+      {/* Permissões route removed - managed in user creation */}
       <Route path="/admin/utilizadores" element={<P><GestaoUtilizadores /></P>} />
       <Route path="*" element={<NotFound />} />
     </Routes>
