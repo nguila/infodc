@@ -113,17 +113,103 @@ const localizacoesIniciais: Localizacao[] = [
   { id: 2, nome: "Armazém", descricao: "Armazém central de stock" },
 ];
 
-let _produtos: Produto[] = [...produtosIniciais];
-let _tipologias: Tipologia[] = [...tipologiasIniciais];
-let _localizacoes: Localizacao[] = [...localizacoesIniciais];
-let _movimentos: Movimento[] = [];
-let _pedidos: Pedido[] = [];
-let _pedidosLevantamento: PedidoLevantamento[] = [];
-let _documentosDevolucao: DocumentoDevolucao[] = [];
-let _nextPedidoNumber = 1;
+// --- localStorage persistence ---
+const STORAGE_KEY = "erp_stock_data";
+
+interface StoreState {
+  produtos: Produto[];
+  tipologias: Tipologia[];
+  localizacoes: Localizacao[];
+  movimentos: Movimento[];
+  pedidos: Pedido[];
+  pedidosLevantamento: PedidoLevantamento[];
+  documentosDevolucao: DocumentoDevolucao[];
+  nextPedidoNumber: number;
+}
+
+function loadState(): StoreState {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw) as StoreState;
+      return parsed;
+    }
+  } catch { /* fallback to defaults */ }
+  return {
+    produtos: [...produtosIniciais],
+    tipologias: [...tipologiasIniciais],
+    localizacoes: [...localizacoesIniciais],
+    movimentos: [],
+    pedidos: [],
+    pedidosLevantamento: [],
+    documentosDevolucao: [],
+    nextPedidoNumber: 1,
+  };
+}
+
+function saveState() {
+  const state: StoreState = {
+    produtos: _produtos,
+    tipologias: _tipologias,
+    localizacoes: _localizacoes,
+    movimentos: _movimentos,
+    pedidos: _pedidos,
+    pedidosLevantamento: _pedidosLevantamento,
+    documentosDevolucao: _documentosDevolucao,
+    nextPedidoNumber: _nextPedidoNumber,
+  };
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+}
+
+// Export for backup page
+export function getFullBackup(): string {
+  const stock = localStorage.getItem(STORAGE_KEY) || "{}";
+  const users = localStorage.getItem("erp_users") || "[]";
+  const backup = {
+    version: 1,
+    date: new Date().toISOString(),
+    stock: JSON.parse(stock),
+    users: JSON.parse(users),
+  };
+  return JSON.stringify(backup, null, 2);
+}
+
+export function restoreFromBackup(json: string): string | null {
+  try {
+    const data = JSON.parse(json);
+    if (!data.version || !data.stock) return "Ficheiro de backup inválido.";
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(data.stock));
+    if (data.users) localStorage.setItem("erp_users", JSON.stringify(data.users));
+    // Reload state
+    const s = data.stock as StoreState;
+    _produtos = s.produtos || [];
+    _tipologias = s.tipologias || [];
+    _localizacoes = s.localizacoes || [];
+    _movimentos = s.movimentos || [];
+    _pedidos = s.pedidos || [];
+    _pedidosLevantamento = s.pedidosLevantamento || [];
+    _documentosDevolucao = s.documentosDevolucao || [];
+    _nextPedidoNumber = s.nextPedidoNumber || 1;
+    notify();
+    return null;
+  } catch {
+    return "Erro ao ler o ficheiro de backup.";
+  }
+}
+
+const initial = loadState();
+let _produtos: Produto[] = initial.produtos;
+let _tipologias: Tipologia[] = initial.tipologias;
+let _localizacoes: Localizacao[] = initial.localizacoes;
+let _movimentos: Movimento[] = initial.movimentos;
+let _pedidos: Pedido[] = initial.pedidos;
+let _pedidosLevantamento: PedidoLevantamento[] = initial.pedidosLevantamento;
+let _documentosDevolucao: DocumentoDevolucao[] = initial.documentosDevolucao;
+let _nextPedidoNumber = initial.nextPedidoNumber;
 let _listeners: (() => void)[] = [];
 
 function notify() {
+  saveState();
   _listeners.forEach((l) => l());
 }
 

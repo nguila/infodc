@@ -6,7 +6,7 @@ import {
   ChevronDown, Info, ShieldCheck, List,
   FileSpreadsheet, LogOut, LayoutDashboard,
   ChevronsLeft, ChevronsRight, BarChart3, History, RotateCcw, FilePlus2,
-  Tag, MapPin,
+  Tag, MapPin, DatabaseBackup,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
@@ -63,6 +63,7 @@ const menuItems: MenuItem[] = [
     icon: ShieldCheck,
     children: [
       { label: "Utilizadores", icon: Users, path: "/admin/utilizadores" },
+      { label: "Backup & Restauro", icon: DatabaseBackup, path: "/admin/backup" },
     ],
   },
 ];
