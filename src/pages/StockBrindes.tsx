@@ -152,12 +152,13 @@ const OverviewTab = () => {
 
 // ─── STOCK TAB ───
 const StockTab = () => {
-  const { produtos, getEstado, importarExcel, adicionarProduto, exportarTemplate } = useStockStore();
+  const { produtos, tipologias, localizacoes, getEstado, importarExcel, adicionarProduto, exportarTemplate } = useStockStore();
   const { toast } = useToast();
   const [search, setSearch] = useState("");
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [newNome, setNewNome] = useState("");
   const [newTipologia, setNewTipologia] = useState("");
+  const [newLocalizacao, setNewLocalizacao] = useState("");
   const [newStock, setNewStock] = useState("");
   const [newMinimo, setNewMinimo] = useState("40");
 
@@ -183,20 +184,20 @@ const StockTab = () => {
   };
 
   const handleAddProduct = () => {
-    const err = adicionarProduto(newNome, newTipologia, Number(newStock) || 0, Number(newMinimo) || 40);
+    const err = adicionarProduto(newNome, newTipologia, newLocalizacao, Number(newStock) || 0, Number(newMinimo) || 40);
     if (err) {
       toast({ title: "Erro", description: err, variant: "destructive" });
       return;
     }
     toast({ title: "Produto adicionado", description: `"${newNome}" foi adicionado ao stock.` });
     setShowAddDialog(false);
-    setNewNome(""); setNewTipologia(""); setNewStock(""); setNewMinimo("40");
+    setNewNome(""); setNewTipologia(""); setNewLocalizacao(""); setNewStock(""); setNewMinimo("40");
   };
 
   const handleExportStock = () => {
-    const headers = ["Nome do Produto", "Tipologia", "Stock Atual", "Stock Mínimo", "Estado"];
+    const headers = ["Nome do Produto", "Tipologia", "Localização", "Stock Atual", "Stock Mínimo", "Estado"];
     const csvRows = [headers.join(";")];
-    sorted.forEach((p) => csvRows.push([p.nome, p.tipologia, p.stockAtual, p.stockMinimo, getEstado(p)].join(";")));
+    sorted.forEach((p) => csvRows.push([p.nome, p.tipologia, p.localizacao, p.stockAtual, p.stockMinimo, getEstado(p)].join(";")));
     const bom = "\uFEFF";
     const blob = new Blob([bom + csvRows.join("\n")], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
@@ -232,7 +233,7 @@ const StockTab = () => {
       </div>
 
       <div className="bg-muted/30 rounded-lg border border-border p-3 text-xs text-muted-foreground">
-        <strong>Template de importação:</strong> O ficheiro deve conter as colunas: <span className="font-semibold text-foreground">Nome do Produto *</span>, <span className="font-semibold text-foreground">Tipologia *</span>, <span className="font-semibold text-foreground">Quantidade / Stock Atual *</span>, Stock Mínimo. Colunas marcadas com * são obrigatórias.
+        <strong>Template de importação:</strong> O ficheiro deve conter as colunas: <span className="font-semibold text-foreground">Nome do Produto *</span>, <span className="font-semibold text-foreground">Tipologia *</span>, Localização, <span className="font-semibold text-foreground">Quantidade / Stock Atual *</span>, Stock Mínimo. Colunas marcadas com * são obrigatórias.
       </div>
 
       <div className="bg-card rounded-xl border border-border overflow-hidden">
@@ -241,6 +242,7 @@ const StockTab = () => {
             <TableRow className="bg-secondary/30">
               <TableHead>Produto</TableHead>
               <TableHead>Tipologia</TableHead>
+              <TableHead>Localização</TableHead>
               <TableHead>Stock Atual</TableHead>
               <TableHead>Stock Mínimo</TableHead>
               <TableHead>Estado</TableHead>
@@ -249,7 +251,7 @@ const StockTab = () => {
           <TableBody>
             {sorted.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={5} className="text-center py-10 text-muted-foreground">
+                <TableCell colSpan={7} className="text-center py-10 text-muted-foreground">
                   Nenhum produto encontrado.
                 </TableCell>
               </TableRow>
@@ -266,6 +268,7 @@ const StockTab = () => {
                     </div>
                   </TableCell>
                   <TableCell className="text-muted-foreground text-sm">{p.tipologia}</TableCell>
+                  <TableCell className="text-muted-foreground text-sm">{p.localizacao || "—"}</TableCell>
                   <TableCell>
                     <span className={`font-semibold text-sm ${p.stockAtual === 0 ? "text-destructive" : p.stockAtual < p.stockMinimo ? "text-amber-600" : "text-foreground"}`}>
                       {p.stockAtual}
@@ -295,9 +298,21 @@ const StockTab = () => {
               <Label>Nome do Produto <span className="text-destructive">*</span></Label>
               <Input value={newNome} onChange={(e) => setNewNome(e.target.value)} placeholder="Ex: Caneta Data CoLAB" />
             </div>
-            <div className="grid gap-2">
-              <Label>Tipologia <span className="text-destructive">*</span></Label>
-              <Input value={newTipologia} onChange={(e) => setNewTipologia(e.target.value)} placeholder="Ex: Escritório, Vestuário, Tecnologia" />
+            <div className="grid grid-cols-2 gap-3">
+              <div className="grid gap-2">
+                <Label>Tipologia <span className="text-destructive">*</span></Label>
+                <select value={newTipologia} onChange={(e) => setNewTipologia(e.target.value)} className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+                  <option value="">Selecionar...</option>
+                  {tipologias.map((t) => <option key={t.id} value={t.nome}>{t.nome}</option>)}
+                </select>
+              </div>
+              <div className="grid gap-2">
+                <Label>Localização</Label>
+                <select value={newLocalizacao} onChange={(e) => setNewLocalizacao(e.target.value)} className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+                  <option value="">Selecionar...</option>
+                  {localizacoes.map((l) => <option key={l.id} value={l.nome}>{l.nome}</option>)}
+                </select>
+              </div>
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div className="grid gap-2">

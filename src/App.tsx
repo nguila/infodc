@@ -13,6 +13,8 @@ import Servicos from "./pages/Servicos";
 import ProjetosFinanciados from "./pages/ProjetosFinanciados";
 import StockBrindes from "./pages/StockBrindes";
 import StockDevolucao from "./pages/StockDevolucao";
+import StockCategorias from "./pages/StockCategorias";
+import StockLocalizacoes from "./pages/StockLocalizacoes";
 import NovoPedido from "./pages/NovoPedido";
 import ListagemPedidos from "./pages/ListagemPedidos";
 // Permissoes removed - permissions managed via user creation
@@ -61,6 +63,8 @@ const AppRoutes = () => {
       <Route path="/stock/produtos" element={<P><StockBrindes defaultTab="stock" /></P>} />
       <Route path="/stock/pedidos" element={<P><StockBrindes defaultTab="pedidos" /></P>} />
       <Route path="/stock/devolucao" element={<P><StockDevolucao /></P>} />
+      <Route path="/stock/tipologias" element={<P><StockCategorias /></P>} />
+      <Route path="/stock/localizacoes" element={<P><StockLocalizacoes /></P>} />
       <Route path="/stock/novo-pedido" element={<P><NovoPedido /></P>} />
       <Route path="/stock/historico" element={<P><StockBrindes defaultTab="historico" /></P>} />
       <Route path="/stock/listagem-pedidos" element={<P><ListagemPedidos /></P>} />
