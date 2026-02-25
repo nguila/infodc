@@ -27,6 +27,7 @@ export interface PedidoProduto {
 
 export interface Pedido {
   id: number;
+  numero: string;
   dataPedido: string;
   nomeRequisitante: string;
   email: string;
@@ -94,6 +95,7 @@ let _movimentos: Movimento[] = [];
 let _pedidos: Pedido[] = [];
 let _pedidosLevantamento: PedidoLevantamento[] = [];
 let _documentosDevolucao: DocumentoDevolucao[] = [];
+let _nextPedidoNumber = 1;
 let _listeners: (() => void)[] = [];
 
 function notify() {
@@ -163,7 +165,34 @@ export function useStockStore() {
     });
   };
 
-  const criarPedido = (pedidoData: Omit<Pedido, "id" | "estado" | "criadoEm">): string | null => {
+  const adicionarProduto = (nome: string, tipologia: string, stockAtual: number, stockMinimo: number): string | null => {
+    if (!nome.trim()) return "Nome do produto é obrigatório.";
+    const existing = _produtos.find((p) => p.nome.toLowerCase() === nome.toLowerCase());
+    if (existing) return `Produto "${nome}" já existe.`;
+    _produtos = [..._produtos, { id: Date.now(), nome: nome.trim(), tipologia: tipologia || "Geral", stockAtual: stockAtual || 0, stockMinimo: stockMinimo || DEFAULT_STOCK_MINIMO }];
+    notify();
+    return null;
+  };
+
+  const getNextPedidoNumber = () => {
+    return `PED-${String(_nextPedidoNumber).padStart(4, "0")}`;
+  };
+
+  const exportarTemplate = () => {
+    const headers = ["Nome do Produto *", "Tipologia *", "Quantidade / Stock Atual *", "Stock Mínimo"];
+    const example = ["Exemplo Produto", "Escritório", "100", "40"];
+    const bom = "\uFEFF";
+    const csv = [headers.join(";"), example.join(";"), ";;; (apagar estas linhas de exemplo)"].join("\n");
+    const blob = new Blob([bom + csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "template_produtos_stock.csv";
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const criarPedido = (pedidoData: Omit<Pedido, "id" | "estado" | "criadoEm" | "numero">): string | null => {
     // Validate stock
     for (const pp of pedidoData.produtos) {
       const prod = _produtos.find((p) => p.id === pp.produtoId);
@@ -175,9 +204,12 @@ export function useStockStore() {
       const prod = _produtos.find((p) => p.id === pp.produtoId)!;
       prod.stockAtual -= pp.quantidade;
     }
+    const numero = getNextPedidoNumber();
+    _nextPedidoNumber++;
     const newPedido: Pedido = {
       ...pedidoData,
       id: Date.now(),
+      numero,
       estado: "Pendente",
       criadoEm: new Date().toISOString(),
     };
@@ -276,6 +308,9 @@ export function useStockStore() {
     documentosDevolucao,
     getEstado,
     importarExcel,
+    adicionarProduto,
+    exportarTemplate,
+    getNextPedidoNumber,
     criarPedido,
     atualizarEstadoPedido,
     criarLevantamento,

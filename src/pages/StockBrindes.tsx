@@ -152,9 +152,14 @@ const OverviewTab = () => {
 
 // ─── STOCK TAB ───
 const StockTab = () => {
-  const { produtos, getEstado, importarExcel } = useStockStore();
+  const { produtos, getEstado, importarExcel, adicionarProduto, exportarTemplate } = useStockStore();
   const { toast } = useToast();
   const [search, setSearch] = useState("");
+  const [showAddDialog, setShowAddDialog] = useState(false);
+  const [newNome, setNewNome] = useState("");
+  const [newTipologia, setNewTipologia] = useState("");
+  const [newStock, setNewStock] = useState("");
+  const [newMinimo, setNewMinimo] = useState("40");
 
   const sorted = [...produtos]
     .filter((p) => p.nome.toLowerCase().includes(search.toLowerCase()))
@@ -177,6 +182,31 @@ const StockTab = () => {
     e.target.value = "";
   };
 
+  const handleAddProduct = () => {
+    const err = adicionarProduto(newNome, newTipologia, Number(newStock) || 0, Number(newMinimo) || 40);
+    if (err) {
+      toast({ title: "Erro", description: err, variant: "destructive" });
+      return;
+    }
+    toast({ title: "Produto adicionado", description: `"${newNome}" foi adicionado ao stock.` });
+    setShowAddDialog(false);
+    setNewNome(""); setNewTipologia(""); setNewStock(""); setNewMinimo("40");
+  };
+
+  const handleExportStock = () => {
+    const headers = ["Nome do Produto", "Tipologia", "Stock Atual", "Stock Mínimo", "Estado"];
+    const csvRows = [headers.join(";")];
+    sorted.forEach((p) => csvRows.push([p.nome, p.tipologia, p.stockAtual, p.stockMinimo, getEstado(p)].join(";")));
+    const bom = "\uFEFF";
+    const blob = new Blob([bom + csvRows.join("\n")], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `stock_brindes_${format(new Date(), "yyyy-MM-dd")}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap gap-3 items-center">
@@ -184,12 +214,25 @@ const StockTab = () => {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <Input placeholder="Pesquisar produto..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
         </div>
+        <Button onClick={() => setShowAddDialog(true)} className="gap-2">
+          <Plus className="w-4 h-4" /> Novo Produto
+        </Button>
         <label>
           <Input type="file" accept=".xlsx,.xls,.csv,.txt" onChange={handleImport} className="hidden" />
           <Button asChild variant="outline" className="gap-2">
-            <span><FileSpreadsheet className="w-4 h-4" /> Atualizar via Excel</span>
+            <span><Upload className="w-4 h-4" /> Importar Excel</span>
           </Button>
         </label>
+        <Button variant="outline" className="gap-2" onClick={exportarTemplate}>
+          <FileSpreadsheet className="w-4 h-4" /> Descarregar Template
+        </Button>
+        <Button variant="outline" className="gap-2" onClick={handleExportStock}>
+          <ArrowDownCircle className="w-4 h-4" /> Exportar Stock
+        </Button>
+      </div>
+
+      <div className="bg-muted/30 rounded-lg border border-border p-3 text-xs text-muted-foreground">
+        <strong>Template de importação:</strong> O ficheiro deve conter as colunas: <span className="font-semibold text-foreground">Nome do Produto *</span>, <span className="font-semibold text-foreground">Tipologia *</span>, <span className="font-semibold text-foreground">Quantidade / Stock Atual *</span>, Stock Mínimo. Colunas marcadas com * são obrigatórias.
       </div>
 
       <div className="bg-card rounded-xl border border-border overflow-hidden">
@@ -239,6 +282,40 @@ const StockTab = () => {
         </Table>
       </div>
       <p className="text-xs text-muted-foreground">{sorted.length} produto(s)</p>
+
+      {/* Add Product Dialog */}
+      <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Novo Produto</DialogTitle>
+            <DialogDescription>Adicionar um novo produto ao inventário de stock.</DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-2">
+            <div className="grid gap-2">
+              <Label>Nome do Produto <span className="text-destructive">*</span></Label>
+              <Input value={newNome} onChange={(e) => setNewNome(e.target.value)} placeholder="Ex: Caneta Data CoLAB" />
+            </div>
+            <div className="grid gap-2">
+              <Label>Tipologia <span className="text-destructive">*</span></Label>
+              <Input value={newTipologia} onChange={(e) => setNewTipologia(e.target.value)} placeholder="Ex: Escritório, Vestuário, Tecnologia" />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="grid gap-2">
+                <Label>Stock Atual</Label>
+                <Input type="number" min={0} value={newStock} onChange={(e) => setNewStock(e.target.value)} placeholder="0" />
+              </div>
+              <div className="grid gap-2">
+                <Label>Stock Mínimo</Label>
+                <Input type="number" min={0} value={newMinimo} onChange={(e) => setNewMinimo(e.target.value)} placeholder="40" />
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowAddDialog(false)}>Cancelar</Button>
+            <Button onClick={handleAddProduct} disabled={!newNome.trim()}>Adicionar Produto</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
@@ -469,7 +546,7 @@ const HistoricoTab = () => {
       p.produtos.forEach((pp) => {
         rows.push({
           data: p.criadoEm ? format(parseISO(p.criadoEm), "yyyy-MM-dd") : p.dataPedido,
-          documento: `Pedido #${p.id}`,
+          documento: p.numero || `Pedido #${p.id}`,
           evento: p.nomeEvento || p.tipoEvento,
           produto: pp.produtoNome,
           quantidade: pp.quantidade,
@@ -821,6 +898,91 @@ const HistoricoTab = () => {
     </div>
   );
 };
+
+// ─── TODOS OS PEDIDOS TAB ───
+const TodosPedidosTab = () => {
+  const { pedidos } = useStockStore();
+  const [search, setSearch] = useState("");
+
+  const estadoStyle: Record<string, string> = {
+    "Pendente": "bg-amber-100 text-amber-700",
+    "Aprovado": "bg-blue-100 text-blue-700",
+    "Em Preparação": "bg-purple-100 text-purple-700",
+    "Entregue": "bg-green-100 text-green-700",
+    "Concluído": "bg-green-100 text-green-700",
+    "Cancelado": "bg-red-100 text-red-700",
+  };
+
+  const filtered = pedidos
+    .filter((p) => {
+      const q = search.toLowerCase();
+      return !q || (p.numero || "").toLowerCase().includes(q) || p.nomeEvento.toLowerCase().includes(q) || p.nomeRequisitante.toLowerCase().includes(q);
+    })
+    .sort((a, b) => b.id - a.id);
+
+  return (
+    <div className="space-y-4">
+      <div className="flex flex-wrap gap-3 items-center">
+        <div className="relative flex-1 min-w-[200px] max-w-sm">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <Input placeholder="Pesquisar por nº, evento, requisitante..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
+        </div>
+        <p className="text-sm text-muted-foreground">{filtered.length} pedido(s)</p>
+      </div>
+
+      <div className="bg-card rounded-xl border border-border overflow-hidden">
+        <Table>
+          <TableHeader>
+            <TableRow className="bg-secondary/30">
+              <TableHead>Nº Pedido</TableHead>
+              <TableHead>Data</TableHead>
+              <TableHead>Evento</TableHead>
+              <TableHead>Requisitante</TableHead>
+              <TableHead>Produtos</TableHead>
+              <TableHead>Prioridade</TableHead>
+              <TableHead>Estado</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {filtered.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={7} className="text-center py-10 text-muted-foreground">
+                  Sem pedidos registados.
+                </TableCell>
+              </TableRow>
+            ) : filtered.map((p) => (
+              <TableRow key={p.id} className="hover:bg-muted/30">
+                <TableCell className="font-semibold text-foreground">{p.numero || `#${p.id}`}</TableCell>
+                <TableCell className="text-muted-foreground text-sm">
+                  {p.criadoEm ? format(parseISO(p.criadoEm), "dd/MM/yyyy") : p.dataPedido}
+                </TableCell>
+                <TableCell className="text-foreground text-sm">{p.nomeEvento}</TableCell>
+                <TableCell className="text-muted-foreground text-sm">{p.nomeRequisitante}</TableCell>
+                <TableCell className="text-muted-foreground text-sm">
+                  {p.produtos.map((pp) => `${pp.produtoNome} (${pp.quantidade})`).join(", ")}
+                </TableCell>
+                <TableCell>
+                  <Badge className={cn("border-0 text-[11px]",
+                    p.prioridade === "Urgente" ? "bg-red-100 text-red-700" :
+                    p.prioridade === "Alta" ? "bg-amber-100 text-amber-700" :
+                    p.prioridade === "Média" ? "bg-blue-100 text-blue-700" :
+                    "bg-secondary text-muted-foreground"
+                  )}>{p.prioridade}</Badge>
+                </TableCell>
+                <TableCell>
+                  <Badge className={`${estadoStyle[p.estado] || "bg-secondary text-muted-foreground"} border-0 text-[11px]`}>
+                    {p.estado}
+                  </Badge>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
+    </div>
+  );
+};
+
 const StockBrindes = ({ defaultTab = "overview" }: { defaultTab?: string }) => {
   return (
     <div className="p-8 animate-fade-in bg-background min-h-screen">
@@ -830,16 +992,18 @@ const StockBrindes = ({ defaultTab = "overview" }: { defaultTab?: string }) => {
       </div>
 
       <Tabs defaultValue={defaultTab} key={defaultTab}>
-        <TabsList className="mb-6">
+        <TabsList className="mb-6 flex-wrap">
           <TabsTrigger value="overview" className="gap-2"><BarChart3 className="w-4 h-4" /> Overview</TabsTrigger>
           <TabsTrigger value="stock" className="gap-2"><Package className="w-4 h-4" /> Stock</TabsTrigger>
           <TabsTrigger value="pedidos" className="gap-2"><ClipboardList className="w-4 h-4" /> Pedidos Ativos</TabsTrigger>
+          <TabsTrigger value="todos-pedidos" className="gap-2"><FileSpreadsheet className="w-4 h-4" /> Todos os Pedidos</TabsTrigger>
           <TabsTrigger value="historico" className="gap-2"><History className="w-4 h-4" /> Histórico</TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview"><OverviewTab /></TabsContent>
         <TabsContent value="stock"><StockTab /></TabsContent>
         <TabsContent value="pedidos"><PedidosAtivosTab /></TabsContent>
+        <TabsContent value="todos-pedidos"><TodosPedidosTab /></TabsContent>
         <TabsContent value="historico"><HistoricoTab /></TabsContent>
       </Tabs>
     </div>
