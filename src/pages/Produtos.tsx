@@ -1,18 +1,32 @@
 import { useState } from "react";
-import { Search, Filter, Users, Building2, Calendar, Link2, ChevronDown, ChevronUp, X } from "lucide-react";
+import {
+  Search, Filter, Users, Building2, Calendar, Link2,
+  ChevronDown, X, Plus, Trash2, UserCheck, Briefcase,
+} from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from "@/components/ui/select";
+import { toast } from "sonner";
+import { useAuth } from "@/contexts/AuthContext";
 
-const tags = ["Passaporte Digital de Produto", "Inteligência Artificial", "Capital Natural", "OCR", "Cidades Inteligentes", "Sustentabilidade", "Rastreabilidade"];
+const allTags = [
+  "Passaporte Digital de Produto", "Inteligência Artificial", "Capital Natural",
+  "OCR", "Cidades Inteligentes", "Sustentabilidade", "Rastreabilidade",
+];
 
 const estados: Record<string, { label: string; class: string }> = {
   ativo: { label: "Ativo", class: "bg-green-100 text-green-700" },
+  inativo: { label: "Inativo", class: "bg-gray-100 text-gray-500" },
 };
 
-interface Produto {
+export interface Produto {
   id: number;
   nome: string;
   resumo: string;
@@ -27,9 +41,12 @@ interface Produto {
   links: { label: string; url: string }[];
   imagemUrl: string;
   logoUrl: string;
+  responsavel: string;
+  productOwner: string;
+  comercialResponsavel: string;
 }
 
-const produtos: Produto[] = [
+const defaultProdutos: Produto[] = [
   {
     id: 1,
     nome: "MyDigiFile",
@@ -45,12 +62,15 @@ const produtos: Produto[] = [
     links: [{ label: "Saber mais", url: "https://www.mydigifile.ai/pt" }],
     imagemUrl: "/images/mydigifile.png",
     logoUrl: "/images/mydigifile.png",
+    responsavel: "Tiago Santos",
+    productOwner: "Pedro Moreira",
+    comercialResponsavel: "",
   },
   {
     id: 2,
     nome: "DPP – Passaporte Digital do Produto",
     resumo: "Sistema digital normalizado de identidade e rastreabilidade de produtos",
-    descricao: "Um sistema digital normalizado que reúne, organiza e disponibiliza informação relevante sobre um produto ao longo de todo o seu ciclo de vida. Cada produto tem uma identidade digital única acessível por meio de identificadores como QR Code ou NFC.",
+    descricao: "Um sistema digital normalizado que reúne, organiza e disponibiliza informação relevante sobre um produto ao longo de todo o seu ciclo de vida.",
     tags: ["Passaporte Digital de Produto", "Rastreabilidade"],
     estado: "ativo",
     equipa: [],
@@ -61,12 +81,15 @@ const produtos: Produto[] = [
     links: [{ label: "Saber mais", url: "https://www.datacolab.pt/project/dpp-digital-product-passport/" }],
     imagemUrl: "/images/dpp.png",
     logoUrl: "/images/dpp.png",
+    responsavel: "",
+    productOwner: "",
+    comercialResponsavel: "",
   },
   {
     id: 3,
     nome: "CIT – Centro de Inteligência Territorial",
     resumo: "Plataforma de Data as a Service para territórios inteligentes",
-    descricao: "Uma plataforma que centraliza serviços de Data as a Service (DaaS), permitindo recolher, integrar, analisar, monitorizar e comunicar dados de várias fontes. Ajuda a promover transparência e suportar a tomada de decisão com base em dados, assim como a facilitar o acesso a informação relevante para os cidadãos sobre diferentes dimensões do território.",
+    descricao: "Uma plataforma que centraliza serviços de Data as a Service (DaaS), permitindo recolher, integrar, analisar, monitorizar e comunicar dados de várias fontes.",
     tags: ["Cidades Inteligentes"],
     estado: "ativo",
     equipa: [],
@@ -77,6 +100,9 @@ const produtos: Produto[] = [
     links: [{ label: "Saber mais", url: "https://www.inteligenciaterritorial.pt/" }],
     imagemUrl: "/images/cit.png",
     logoUrl: "/images/cit.png",
+    responsavel: "",
+    productOwner: "",
+    comercialResponsavel: "",
   },
   {
     id: 4,
@@ -93,16 +119,20 @@ const produtos: Produto[] = [
     links: [{ label: "Saber mais", url: "https://www.nvp.pt/" }],
     imagemUrl: "/images/nvp.png",
     logoUrl: "/images/nvp.png",
+    responsavel: "",
+    productOwner: "",
+    comercialResponsavel: "",
   },
 ];
 
 const NA = "Não aplicável";
 
+/* ───────── Modal de detalhe ───────── */
 const ProdutoModal = ({ produto, onClose }: { produto: Produto; onClose: () => void }) => {
-  const est = estados[produto.estado];
+  const est = estados[produto.estado] ?? estados.ativo;
   return (
     <Dialog open onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto p-0">
+      <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto p-0 [&>button.absolute]:hidden">
         {/* Banner */}
         <div className="relative h-48 w-full overflow-hidden rounded-t-lg">
           <img src={produto.imagemUrl} alt={produto.nome} className="w-full h-full object-cover" />
@@ -120,20 +150,54 @@ const ProdutoModal = ({ produto, onClose }: { produto: Produto; onClose: () => v
         </div>
 
         <div className="p-6 space-y-5">
-          {/* Tags */}
           <div className="flex flex-wrap gap-1.5">
             {produto.tags.map((t) => <Badge key={t} variant="secondary" className="text-xs">{t}</Badge>)}
           </div>
 
-          {/* Descrição */}
           <div>
             <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">Descrição</p>
             <p className="text-sm text-foreground">{produto.descricao || NA}</p>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
-            {/* Equipa */}
+            {/* Responsável */}
             <div>
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Responsável do Produto</p>
+              <div className="flex items-center gap-2">
+                <UserCheck className="w-4 h-4 text-muted-foreground" />
+                <span className="text-sm">{produto.responsavel || NA}</span>
+              </div>
+            </div>
+
+            {/* Product Owner */}
+            <div>
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Product Owner</p>
+              <div className="flex items-center gap-2">
+                <Briefcase className="w-4 h-4 text-muted-foreground" />
+                <span className="text-sm">{produto.productOwner || NA}</span>
+              </div>
+            </div>
+
+            {/* Comercial */}
+            <div>
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Comercial Responsável</p>
+              <div className="flex items-center gap-2">
+                <Users className="w-4 h-4 text-muted-foreground" />
+                <span className="text-sm">{produto.comercialResponsavel || NA}</span>
+              </div>
+            </div>
+
+            {/* Cliente */}
+            <div>
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Cliente</p>
+              <div className="flex items-center gap-2">
+                <Building2 className="w-4 h-4 text-muted-foreground" />
+                <span className="text-sm">{produto.cliente || NA}</span>
+              </div>
+            </div>
+
+            {/* Equipa */}
+            <div className="col-span-2">
               <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Equipa</p>
               {produto.equipa.length > 0
                 ? produto.equipa.map((m) => (
@@ -147,36 +211,11 @@ const ProdutoModal = ({ produto, onClose }: { produto: Produto; onClose: () => v
                 : <p className="text-sm text-muted-foreground">{NA}</p>
               }
             </div>
-
-            {/* Cliente */}
-            <div>
-              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Cliente</p>
-              <div className="flex items-center gap-2">
-                <Building2 className="w-4 h-4 text-muted-foreground" />
-                <span className="text-sm">{produto.cliente || NA}</span>
-              </div>
-            </div>
-
-            {/* Datas */}
-            <div>
-              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Data de Início</p>
-              <div className="flex items-center gap-2">
-                <Calendar className="w-4 h-4 text-muted-foreground" />
-                <span className="text-sm">{produto.dataInicio || NA}</span>
-              </div>
-            </div>
-            <div>
-              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Data de Fim</p>
-              <div className="flex items-center gap-2">
-                <Calendar className="w-4 h-4 text-muted-foreground" />
-                <span className="text-sm">{produto.dataFim || NA}</span>
-              </div>
-            </div>
           </div>
 
           {/* Parceiros */}
           <div>
-            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Parceiros / Entidades Beneficiárias</p>
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Parceiros</p>
             {produto.parceiros.length > 0
               ? <div className="flex flex-wrap gap-2">{produto.parceiros.map((p) => <Badge key={p} variant="outline">{p}</Badge>)}</div>
               : <p className="text-sm text-muted-foreground">{NA}</p>
@@ -205,10 +244,145 @@ const ProdutoModal = ({ produto, onClose }: { produto: Produto; onClose: () => v
   );
 };
 
+/* ───────── Formulário de novo produto ───────── */
+const emptyForm = (): Omit<Produto, "id"> => ({
+  nome: "", resumo: "", descricao: "", tags: [], estado: "ativo",
+  equipa: [], cliente: "", parceiros: [], dataInicio: "", dataFim: "",
+  links: [], imagemUrl: "", logoUrl: "", responsavel: "", productOwner: "",
+  comercialResponsavel: "",
+});
+
+const NovoProdutoForm = ({ onSave, onCancel }: { onSave: (p: Omit<Produto, "id">) => void; onCancel: () => void }) => {
+  const [form, setForm] = useState(emptyForm());
+  const [newLink, setNewLink] = useState({ label: "", url: "" });
+
+  const set = <K extends keyof typeof form>(k: K, v: typeof form[K]) => setForm((f) => ({ ...f, [k]: v }));
+
+  const addLink = () => {
+    if (!newLink.label || !newLink.url) return;
+    set("links", [...form.links, { ...newLink }]);
+    setNewLink({ label: "", url: "" });
+  };
+  const removeLink = (i: number) => set("links", form.links.filter((_, idx) => idx !== i));
+
+  const handleSubmit = () => {
+    if (!form.nome.trim() || !form.resumo.trim()) {
+      toast.error("Nome e descrição curta são obrigatórios");
+      return;
+    }
+    onSave(form);
+  };
+
+  return (
+    <Dialog open onOpenChange={onCancel}>
+      <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>Novo Produto</DialogTitle>
+        </DialogHeader>
+
+        <div className="space-y-4 mt-2">
+          <div className="grid grid-cols-2 gap-4">
+            <div className="col-span-2">
+              <Label>Nome do Produto *</Label>
+              <Input value={form.nome} onChange={(e) => set("nome", e.target.value)} placeholder="Nome do produto" />
+            </div>
+            <div className="col-span-2">
+              <Label>Descrição curta *</Label>
+              <Input value={form.resumo} onChange={(e) => set("resumo", e.target.value)} placeholder="Resumo breve" />
+            </div>
+            <div className="col-span-2">
+              <Label>Descrição detalhada</Label>
+              <Textarea value={form.descricao} onChange={(e) => set("descricao", e.target.value)} placeholder="Descrição completa" rows={3} />
+            </div>
+            <div>
+              <Label>URL da Imagem</Label>
+              <Input value={form.imagemUrl} onChange={(e) => set("imagemUrl", e.target.value)} placeholder="/images/produto.png" />
+            </div>
+            <div>
+              <Label>Estado</Label>
+              <Select value={form.estado} onValueChange={(v) => set("estado", v)}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="ativo">Ativo</SelectItem>
+                  <SelectItem value="inativo">Inativo</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label>Categoria / Tags</Label>
+              <div className="flex flex-wrap gap-1.5 mt-1">
+                {allTags.map((tag) => (
+                  <Badge
+                    key={tag}
+                    variant={form.tags.includes(tag) ? "default" : "outline"}
+                    className="cursor-pointer text-[10px]"
+                    onClick={() => set("tags", form.tags.includes(tag) ? form.tags.filter((t) => t !== tag) : [...form.tags, tag])}
+                  >
+                    {tag}
+                  </Badge>
+                ))}
+              </div>
+            </div>
+            <div>
+              <Label>Cliente (opcional)</Label>
+              <Input value={form.cliente} onChange={(e) => set("cliente", e.target.value)} placeholder="Nome do cliente" />
+            </div>
+            <div>
+              <Label>Responsável do Produto</Label>
+              <Input value={form.responsavel} onChange={(e) => set("responsavel", e.target.value)} placeholder="Nome" />
+            </div>
+            <div>
+              <Label>Product Owner</Label>
+              <Input value={form.productOwner} onChange={(e) => set("productOwner", e.target.value)} placeholder="Nome" />
+            </div>
+            <div className="col-span-2">
+              <Label>Comercial Responsável</Label>
+              <Input value={form.comercialResponsavel} onChange={(e) => set("comercialResponsavel", e.target.value)} placeholder="Nome" />
+            </div>
+          </div>
+
+          {/* Links dinâmicos */}
+          <div>
+            <Label>Links (Documentação / Demo / Site)</Label>
+            {form.links.length > 0 && (
+              <div className="space-y-1.5 mt-2 mb-2">
+                {form.links.map((l, i) => (
+                  <div key={i} className="flex items-center gap-2 text-sm">
+                    <Badge variant="secondary" className="text-xs">{l.label}</Badge>
+                    <span className="text-muted-foreground truncate flex-1">{l.url}</span>
+                    <Button variant="ghost" size="sm" className="h-6 w-6 p-0" onClick={() => removeLink(i)}>
+                      <Trash2 className="w-3 h-3 text-destructive" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            )}
+            <div className="flex gap-2 mt-1">
+              <Input value={newLink.label} onChange={(e) => setNewLink((p) => ({ ...p, label: e.target.value }))} placeholder="Label (ex: Documentação)" className="flex-1" />
+              <Input value={newLink.url} onChange={(e) => setNewLink((p) => ({ ...p, url: e.target.value }))} placeholder="URL" className="flex-1" />
+              <Button variant="outline" size="sm" onClick={addLink} className="shrink-0 gap-1"><Plus className="w-3 h-3" /> Adicionar</Button>
+            </div>
+          </div>
+
+          <div className="flex justify-end gap-2 pt-2">
+            <Button variant="outline" onClick={onCancel}>Cancelar</Button>
+            <Button onClick={handleSubmit}>Criar Produto</Button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
+/* ───────── Página principal ───────── */
 const Produtos = () => {
+  const { user } = useAuth();
+  const isAdmin = user?.perfil === "Administrador";
+  const [produtos, setProdutos] = useState<Produto[]>(defaultProdutos);
   const [search, setSearch] = useState("");
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [selectedProduto, setSelectedProduto] = useState<Produto | null>(null);
+  const [showNewForm, setShowNewForm] = useState(false);
 
   const toggleTag = (tag: string) => {
     if (tag === "all") { setSelectedTags([]); return; }
@@ -221,44 +395,38 @@ const Produtos = () => {
     return matchSearch && matchTags;
   });
 
+  const handleCreateProduct = (data: Omit<Produto, "id">) => {
+    const newProduto: Produto = { ...data, id: Date.now(), imagemUrl: data.imagemUrl || "/placeholder.svg", logoUrl: data.logoUrl || data.imagemUrl || "/placeholder.svg" };
+    setProdutos((prev) => [...prev, newProduto]);
+    setShowNewForm(false);
+    toast.success("Produto criado com sucesso");
+  };
+
   return (
     <div className="p-8 animate-fade-in">
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold text-foreground">Produtos</h1>
-        <p className="text-sm text-muted-foreground mt-1">Catálogo de produtos e soluções</p>
+      <div className="flex items-center justify-between mb-8">
+        <div>
+          <h1 className="text-2xl font-bold text-foreground">Produtos</h1>
+          <p className="text-sm text-muted-foreground mt-1">Catálogo de produtos e soluções</p>
+        </div>
+        {isAdmin && (
+          <Button onClick={() => setShowNewForm(true)} className="gap-2">
+            <Plus className="w-4 h-4" /> Novo Produto
+          </Button>
+        )}
       </div>
 
       {/* Search & Filters */}
       <div className="mb-6 space-y-4">
         <div className="relative max-w-md">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <Input
-            placeholder="Pesquisar produtos..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="pl-10"
-          />
+          <Input placeholder="Pesquisar produtos..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-10" />
         </div>
         <div className="flex items-center gap-2 flex-wrap">
           <Filter className="w-4 h-4 text-muted-foreground" />
-          <Button
-            variant={selectedTags.length === 0 ? "default" : "outline"}
-            size="sm"
-            onClick={() => toggleTag("all")}
-            className="text-xs h-7"
-          >
-            Todos
-          </Button>
-          {tags.map((tag) => (
-            <Button
-              key={tag}
-              variant={selectedTags.includes(tag) ? "default" : "outline"}
-              size="sm"
-              onClick={() => toggleTag(tag)}
-              className="text-xs h-7"
-            >
-              {tag}
-            </Button>
+          <Button variant={selectedTags.length === 0 ? "default" : "outline"} size="sm" onClick={() => toggleTag("all")} className="text-xs h-7">Todos</Button>
+          {allTags.map((tag) => (
+            <Button key={tag} variant={selectedTags.includes(tag) ? "default" : "outline"} size="sm" onClick={() => toggleTag(tag)} className="text-xs h-7">{tag}</Button>
           ))}
         </div>
       </div>
@@ -266,22 +434,22 @@ const Produtos = () => {
       {/* Products grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
         {filtered.map((p) => {
-          const est = estados[p.estado];
+          const est = estados[p.estado] ?? estados.ativo;
+          const hasCliente = !!p.cliente;
+          const hasPO = !!p.productOwner;
+          const hasComercial = !!p.comercialResponsavel;
+
           return (
             <Card key={p.id} className="hover:shadow-lg hover:border-primary/20 transition-all group overflow-hidden flex flex-col">
-              {/* Banner image */}
               <div className="relative h-36 overflow-hidden">
                 <img src={p.imagemUrl} alt={p.nome} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
                 <Badge className={`${est.class} border-0 text-[10px] absolute top-3 right-3`}>{est.label}</Badge>
-                {/* Logo */}
                 <img src={p.logoUrl} alt="logo" className="absolute bottom-3 left-3 w-9 h-9 rounded-md border border-white/80 object-cover shadow" />
               </div>
 
               <CardContent className="p-4 flex flex-col flex-1">
-                <h3 className="text-sm font-semibold text-foreground group-hover:text-primary transition-colors mb-1 leading-tight">
-                  {p.nome}
-                </h3>
+                <h3 className="text-sm font-semibold text-foreground group-hover:text-primary transition-colors mb-1 leading-tight">{p.nome}</h3>
                 <p className="text-xs text-muted-foreground mb-3 line-clamp-2">{p.resumo}</p>
 
                 <div className="flex flex-wrap gap-1 mb-3">
@@ -291,22 +459,35 @@ const Produtos = () => {
                 </div>
 
                 <div className="space-y-1.5 text-xs text-muted-foreground mb-4">
+                  {/* Responsável — always show */}
                   <div className="flex items-center gap-1.5">
-                    <Users className="w-3 h-3 shrink-0" />
-                    <span className="truncate">{p.equipa.join(", ") || "Não aplicável"}</span>
+                    <UserCheck className="w-3 h-3 shrink-0" />
+                    <span className="truncate">{p.responsavel || NA}</span>
                   </div>
-                  <div className="flex items-center gap-1.5">
-                    <Building2 className="w-3 h-3 shrink-0" />
-                    <span className="truncate">{p.cliente || "Não aplicável"}</span>
-                  </div>
+                  {/* Product Owner — hide if empty */}
+                  {hasPO && (
+                    <div className="flex items-center gap-1.5">
+                      <Briefcase className="w-3 h-3 shrink-0" />
+                      <span className="truncate">{p.productOwner}</span>
+                    </div>
+                  )}
+                  {/* Cliente — hide if empty */}
+                  {hasCliente && (
+                    <div className="flex items-center gap-1.5">
+                      <Building2 className="w-3 h-3 shrink-0" />
+                      <span className="truncate">{p.cliente}</span>
+                    </div>
+                  )}
+                  {/* Comercial — hide if empty */}
+                  {hasComercial && (
+                    <div className="flex items-center gap-1.5">
+                      <Users className="w-3 h-3 shrink-0" />
+                      <span className="truncate">{p.comercialResponsavel}</span>
+                    </div>
+                  )}
                 </div>
 
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="mt-auto w-full text-xs gap-1"
-                  onClick={() => setSelectedProduto(p)}
-                >
+                <Button variant="outline" size="sm" className="mt-auto w-full text-xs gap-1" onClick={() => setSelectedProduto(p)}>
                   Ver mais <ChevronDown className="w-3 h-3" />
                 </Button>
               </CardContent>
@@ -321,9 +502,8 @@ const Produtos = () => {
         </div>
       )}
 
-      {selectedProduto && (
-        <ProdutoModal produto={selectedProduto} onClose={() => setSelectedProduto(null)} />
-      )}
+      {selectedProduto && <ProdutoModal produto={selectedProduto} onClose={() => setSelectedProduto(null)} />}
+      {showNewForm && <NovoProdutoForm onSave={handleCreateProduct} onCancel={() => setShowNewForm(false)} />}
     </div>
   );
 };
