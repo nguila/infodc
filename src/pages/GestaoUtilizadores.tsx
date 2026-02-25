@@ -10,6 +10,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useAuth } from "@/contexts/AuthContext";
 import type { Perfil } from "@/lib/permissions";
+import { isPasswordValid } from "@/lib/passwordValidation";
+import { PasswordStrength } from "@/components/PasswordStrength";
 
 interface StoredUser {
   id: string;
@@ -51,6 +53,10 @@ const GestaoUtilizadores = () => {
 
   const handleCreate = () => {
     if (!form.nome || !form.email || !form.password) return;
+    if (!isPasswordValid(form.password)) {
+      toast.error("A palavra-passe não cumpre os requisitos de segurança");
+      return;
+    }
     const all = getUsers();
     if (all.some((u) => u.email === form.email)) {
       toast.error("Este utilizador já existe");
@@ -80,6 +86,10 @@ const GestaoUtilizadores = () => {
 
   const handleResetPassword = () => {
     if (!resetUser || !newPassword) return;
+    if (!isPasswordValid(newPassword)) {
+      toast.error("A palavra-passe não cumpre os requisitos de segurança");
+      return;
+    }
     const all = getUsers();
     saveUsers(all.map((u) => (u.id === resetUser.id ? { ...u, password: newPassword } : u)));
     refresh();
@@ -104,7 +114,11 @@ const GestaoUtilizadores = () => {
             <div className="space-y-4 mt-4">
               <div className="space-y-2"><Label>Nome *</Label><Input value={form.nome} onChange={(e) => setForm({ ...form, nome: e.target.value })} /></div>
               <div className="space-y-2"><Label>Utilizador / Email *</Label><Input value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} /></div>
-              <div className="space-y-2"><Label>Palavra-passe *</Label><Input type="password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} /></div>
+              <div className="space-y-2">
+                <Label>Palavra-passe *</Label>
+                <Input type="password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} />
+                <PasswordStrength password={form.password} />
+              </div>
               <div className="space-y-2"><Label>Cargo</Label><Input value={form.cargo} onChange={(e) => setForm({ ...form, cargo: e.target.value })} /></div>
               <div className="space-y-2">
                 <Label>Perfil</Label>
@@ -117,7 +131,7 @@ const GestaoUtilizadores = () => {
                   </SelectContent>
                 </Select>
               </div>
-              <Button onClick={handleCreate} disabled={!form.nome || !form.email || !form.password} className="w-full">Criar</Button>
+              <Button onClick={handleCreate} disabled={!form.nome || !form.email || !isPasswordValid(form.password)} className="w-full">Criar</Button>
             </div>
           </DialogContent>
         </Dialog>
@@ -183,10 +197,11 @@ const GestaoUtilizadores = () => {
             <div className="space-y-2">
               <Label>Nova Palavra-passe *</Label>
               <Input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} placeholder="Nova palavra-passe" />
+              <PasswordStrength password={newPassword} />
             </div>
             <div className="flex gap-2 justify-end">
               <Button variant="outline" onClick={() => { setResetUser(null); setNewPassword(""); }}>Cancelar</Button>
-              <Button onClick={handleResetPassword} disabled={!newPassword}>Redefinir</Button>
+              <Button onClick={handleResetPassword} disabled={!isPasswordValid(newPassword)}>Redefinir</Button>
             </div>
           </div>
         </DialogContent>
