@@ -494,9 +494,6 @@ const PedidosAtivosTab = () => {
     <div className="space-y-4">
       <div className="flex justify-between items-center">
         <p className="text-sm text-muted-foreground">{pedidosAtivos.length} pedido(s) ativo(s)</p>
-        <Button onClick={() => setLevDialog(true)} className="gap-2">
-          <Plus className="w-4 h-4" /> Novo Pedido de Levantamento
-        </Button>
       </div>
 
       <div className="bg-card rounded-xl border border-border overflow-hidden">
