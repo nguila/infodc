@@ -64,7 +64,6 @@ const menuItems: MenuItem[] = [
     children: [
       { label: "Utilizadores", icon: Users, path: "/admin/utilizadores" },
       { label: "Permissões", icon: Shield, path: "/admin/permissoes" },
-      { label: "Backup & Restauro", icon: DatabaseBackup, path: "/admin/backup" },
     ],
   },
 ];
