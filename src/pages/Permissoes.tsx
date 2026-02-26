@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Search, Shield, ShieldCheck, ShieldAlert, Edit, Save } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Search, Shield, ShieldCheck, ShieldAlert, Edit, Save, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -14,14 +14,18 @@ import { Checkbox } from "@/components/ui/checkbox";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
+import { useAuth } from "@/contexts/AuthContext";
+import type { Perfil } from "@/lib/permissions";
 
-interface User {
-  id: number;
+const USERS_KEY = "erp_users";
+
+interface StoredUser {
+  id: string;
   nome: string;
   email: string;
-  perfil: "Administrador" | "Gestor" | "Utilizador";
-  estado: "Ativo" | "Inativo";
-  permissoes: string[];
+  cargo?: string;
+  perfil: Perfil;
+  password: string;
 }
 
 const allPermissoes = [
@@ -30,29 +34,56 @@ const allPermissoes = [
   "Gerir Utilizadores", "Gerir Armazéns",
 ];
 
-const mockUsers: User[] = [
-  { id: 1, nome: "Admin Sistema", email: "admin@empresa.pt", perfil: "Administrador", estado: "Ativo", permissoes: allPermissoes },
-  { id: 2, nome: "Ana Costa", email: "ana.costa@empresa.pt", perfil: "Gestor", estado: "Ativo", permissoes: ["Ver Produtos", "Editar Produtos", "Criar Pedidos", "Aprovar Pedidos", "Ver Relatórios"] },
-  { id: 3, nome: "João Silva", email: "joao.silva@empresa.pt", perfil: "Utilizador", estado: "Ativo", permissoes: ["Ver Produtos", "Criar Pedidos"] },
-  { id: 4, nome: "Maria Santos", email: "maria.santos@empresa.pt", perfil: "Utilizador", estado: "Inativo", permissoes: ["Ver Produtos"] },
-];
+const PERMISSIONS_KEY = "erp_user_permissions";
+
+function getUserPermissions(): Record<string, string[]> {
+  try { return JSON.parse(localStorage.getItem(PERMISSIONS_KEY) || "{}"); } catch { return {}; }
+}
+
+function saveUserPermissions(data: Record<string, string[]>) {
+  localStorage.setItem(PERMISSIONS_KEY, JSON.stringify(data));
+}
+
+function getUsers(): StoredUser[] {
+  try { return JSON.parse(localStorage.getItem(USERS_KEY) || "[]"); } catch { return []; }
+}
+
+function saveUsers(users: StoredUser[]) {
+  localStorage.setItem(USERS_KEY, JSON.stringify(users));
+}
 
 const Permissoes = () => {
+  const { user: currentUser } = useAuth();
   const [search, setSearch] = useState("");
-  const [users, setUsers] = useState(mockUsers);
+  const [users, setUsers] = useState<StoredUser[]>([]);
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [editUser, setEditUser] = useState<User | null>(null);
-  const [formPerfil, setFormPerfil] = useState("");
+  const [editUser, setEditUser] = useState<StoredUser | null>(null);
+  const [formPerfil, setFormPerfil] = useState<Perfil>("Utilizador");
   const [formPermissoes, setFormPermissoes] = useState<string[]>([]);
+  const [userPermissions, setUserPermissions] = useState<Record<string, string[]>>({});
+
+  const refresh = () => {
+    setUsers(getUsers());
+    setUserPermissions(getUserPermissions());
+  };
+
+  useEffect(() => { refresh(); }, []);
 
   const filtered = users.filter((u) =>
     u.nome.toLowerCase().includes(search.toLowerCase()) || u.email.toLowerCase().includes(search.toLowerCase())
   );
 
-  const openEdit = (user: User) => {
+  const getPermissionsForUser = (userId: string, perfil: Perfil): string[] => {
+    if (userPermissions[userId]) return userPermissions[userId];
+    if (perfil === "Administrador") return [...allPermissoes];
+    if (perfil === "Gestor") return ["Ver Produtos", "Editar Produtos", "Criar Pedidos", "Aprovar Pedidos", "Ver Relatórios"];
+    return ["Ver Produtos", "Criar Pedidos"];
+  };
+
+  const openEdit = (user: StoredUser) => {
     setEditUser(user);
     setFormPerfil(user.perfil);
-    setFormPermissoes([...user.permissoes]);
+    setFormPermissoes(getPermissionsForUser(user.id, user.perfil));
     setDialogOpen(true);
   };
 
@@ -62,11 +93,26 @@ const Permissoes = () => {
 
   const handleSave = () => {
     if (!editUser) return;
-    setUsers((prev) =>
-      prev.map((u) => u.id === editUser.id ? { ...u, perfil: formPerfil as User["perfil"], permissoes: formPermissoes } : u)
-    );
+    // Update perfil in users
+    const all = getUsers();
+    saveUsers(all.map((u) => u.id === editUser.id ? { ...u, perfil: formPerfil } : u));
+    // Save permissions
+    const perms = getUserPermissions();
+    perms[editUser.id] = formPermissoes;
+    saveUserPermissions(perms);
+    refresh();
     setDialogOpen(false);
     toast.success("Permissões guardadas com sucesso");
+  };
+
+  const handleDelete = (user: StoredUser) => {
+    if (user.id === currentUser?.id) {
+      toast.error("Não pode eliminar o seu próprio utilizador");
+      return;
+    }
+    saveUsers(getUsers().filter((u) => u.id !== user.id));
+    refresh();
+    toast.success(`Utilizador ${user.nome} eliminado`);
   };
 
   const getPerfilIcon = (perfil: string) => {
@@ -87,47 +133,62 @@ const Permissoes = () => {
         <Input placeholder="Pesquisar utilizador..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
       </div>
 
-      <div className="bg-card rounded-xl border border-border overflow-hidden">
-        <Table>
-          <TableHeader>
-            <TableRow className="bg-secondary/50">
-              <TableHead>Utilizador</TableHead>
-              <TableHead>Email</TableHead>
-              <TableHead>Perfil</TableHead>
-              <TableHead>Permissões</TableHead>
-              <TableHead>Estado</TableHead>
-              <TableHead className="text-right">Ações</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {filtered.map((user) => (
-              <TableRow key={user.id}>
-                <TableCell className="font-medium text-foreground">{user.nome}</TableCell>
-                <TableCell className="text-muted-foreground">{user.email}</TableCell>
-                <TableCell>
-                  <div className="flex items-center gap-2">
-                    {getPerfilIcon(user.perfil)}
-                    <span className="text-sm text-foreground">{user.perfil}</span>
-                  </div>
-                </TableCell>
-                <TableCell>
-                  <span className="text-xs text-muted-foreground">{user.permissoes.length} permissões</span>
-                </TableCell>
-                <TableCell>
-                  <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${user.estado === "Ativo" ? "bg-success/15 text-success" : "bg-muted text-muted-foreground"}`}>
-                    {user.estado}
-                  </span>
-                </TableCell>
-                <TableCell className="text-right">
-                  <Button variant="ghost" size="icon" onClick={() => openEdit(user)}>
-                    <Edit className="w-4 h-4" />
-                  </Button>
-                </TableCell>
+      {users.length === 0 ? (
+        <div className="text-center py-12 text-muted-foreground">
+          <Shield className="w-12 h-12 mx-auto mb-3 opacity-30" />
+          <p>Nenhum utilizador registado. Crie utilizadores na Gestão de Utilizadores.</p>
+        </div>
+      ) : (
+        <div className="bg-card rounded-xl border border-border overflow-hidden">
+          <Table>
+            <TableHeader>
+              <TableRow className="bg-secondary/50">
+                <TableHead>Utilizador</TableHead>
+                <TableHead>Email</TableHead>
+                <TableHead>Perfil</TableHead>
+                <TableHead>Permissões</TableHead>
+                <TableHead className="text-right">Ações</TableHead>
               </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </div>
+            </TableHeader>
+            <TableBody>
+              {filtered.map((user) => (
+                <TableRow key={user.id}>
+                  <TableCell className="font-medium text-foreground">{user.nome}</TableCell>
+                  <TableCell className="text-muted-foreground">{user.email}</TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-2">
+                      {getPerfilIcon(user.perfil)}
+                      <span className="text-sm text-foreground">{user.perfil}</span>
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <span className="text-xs text-muted-foreground">
+                      {getPermissionsForUser(user.id, user.perfil).length} permissões
+                    </span>
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <div className="flex items-center justify-end gap-1">
+                      <Button variant="ghost" size="icon" onClick={() => openEdit(user)} title="Editar permissões">
+                        <Edit className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="text-muted-foreground hover:text-destructive"
+                        onClick={() => handleDelete(user)}
+                        disabled={user.id === currentUser?.id}
+                        title="Eliminar utilizador"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      )}
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="max-w-md">
@@ -138,7 +199,7 @@ const Permissoes = () => {
           <div className="grid gap-4 py-2">
             <div className="grid gap-2">
               <Label>Perfil</Label>
-              <Select value={formPerfil} onValueChange={setFormPerfil}>
+              <Select value={formPerfil} onValueChange={(v) => setFormPerfil(v as Perfil)}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="Administrador">Administrador</SelectItem>

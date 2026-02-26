@@ -17,7 +17,7 @@ import StockCategorias from "./pages/StockCategorias";
 import StockLocalizacoes from "./pages/StockLocalizacoes";
 import NovoPedido from "./pages/NovoPedido";
 import ListagemPedidos from "./pages/ListagemPedidos";
-// Permissoes removed - permissions managed via user creation
+import Permissoes from "./pages/Permissoes";
 import GestaoUtilizadores from "./pages/GestaoUtilizadores";
 import BackupRestore from "./pages/BackupRestore";
 import Comunicacao from "./pages/Comunicacao";
@@ -72,7 +72,7 @@ const AppRoutes = () => {
       <Route path="/comunicacao/pedidos" element={<P><Comunicacao /></P>} />
       <Route path="/comunicacao/newsletter" element={<P><Newsletter /></P>} />
       <Route path="/comunicacao/links" element={<P><OutrosLinks /></P>} />
-      {/* Permissões route removed - managed in user creation */}
+      <Route path="/admin/permissoes" element={<P><Permissoes /></P>} />
       <Route path="/admin/utilizadores" element={<P><GestaoUtilizadores /></P>} />
       <Route path="/admin/backup" element={<P><BackupRestore /></P>} />
       <Route path="*" element={<NotFound />} />

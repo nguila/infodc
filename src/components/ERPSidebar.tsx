@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useLocation, Link, useNavigate } from "react-router-dom";
 import {
-  Package, Wrench, FolderKanban, Box,
+  Package, Wrench, FolderKanban, Box, Shield,
   ClipboardList, Users, Megaphone, Newspaper,
   ChevronDown, Info, ShieldCheck, List,
   FileSpreadsheet, LogOut, LayoutDashboard,
@@ -63,6 +63,7 @@ const menuItems: MenuItem[] = [
     icon: ShieldCheck,
     children: [
       { label: "Utilizadores", icon: Users, path: "/admin/utilizadores" },
+      { label: "Permissões", icon: Shield, path: "/admin/permissoes" },
       { label: "Backup & Restauro", icon: DatabaseBackup, path: "/admin/backup" },
     ],
   },
