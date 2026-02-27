@@ -74,25 +74,19 @@ const GestaoUtilizadores = () => {
     }
     setCreating(true);
     try {
-      // Sign up new user via edge function or direct auth
-      const { data, error } = await supabase.auth.signUp({
-        email: form.email,
-        password: form.password,
-        options: { data: { nome: form.nome } },
+      const { data: { session } } = await supabase.auth.getSession();
+      const res = await supabase.functions.invoke("admin-create-user", {
+        body: {
+          email: form.email,
+          password: form.password,
+          nome: form.nome,
+          cargo: form.cargo,
+          perfil: form.perfil,
+        },
       });
-      if (error) {
-        toast.error(error.message);
+      if (res.error || res.data?.error) {
+        toast.error(res.data?.error || res.error?.message || "Erro ao criar utilizador");
         return;
-      }
-      if (data.user) {
-        // Update cargo if provided
-        if (form.cargo) {
-          await supabase.from("profiles").update({ cargo: form.cargo }).eq("user_id", data.user.id);
-        }
-        // Update role if not default
-        if (form.perfil !== "Utilizador") {
-          await supabase.from("user_roles").update({ role: perfilToRoleMap[form.perfil] as any }).eq("user_id", data.user.id);
-        }
       }
       await fetchUsers();
       setShowNew(false);
