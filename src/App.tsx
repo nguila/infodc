@@ -57,11 +57,11 @@ const P = ({ children }: { children: React.ReactNode }) => (
 );
 
 const AppRoutes = () => {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, loading } = useAuth();
 
   return (
     <Routes>
-      <Route path="/login" element={isAuthenticated ? <Navigate to="/" replace /> : <Login />} />
+      <Route path="/login" element={loading ? null : isAuthenticated ? <Navigate to="/" replace /> : <Login />} />
       <Route path="/" element={<P><Dashboard /></P>} />
       <Route path="/produtos" element={<P><Produtos /></P>} />
       <Route path="/servicos" element={<P><Servicos /></P>} />
