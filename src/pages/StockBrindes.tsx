@@ -5,6 +5,7 @@ import {
   CheckCircle2, ArrowDownCircle, ArrowUpCircle, CalendarIcon,
   FileDown, Users, Edit, Trash2,
 } from "lucide-react";
+import ImageUpload from "@/components/ImageUpload";
 import { format, parseISO, isWithinInterval, startOfMonth, endOfMonth, startOfYear, endOfYear, subMonths } from "date-fns";
 import { pt } from "date-fns/locale";
 import jsPDF from "jspdf";
@@ -171,6 +172,7 @@ const StockTab = () => {
   const [newLocalizacao, setNewLocalizacao] = useState("");
   const [newStock, setNewStock] = useState("");
   const [newMinimo, setNewMinimo] = useState("40");
+  const [newImagemUrl, setNewImagemUrl] = useState("");
 
   const sorted = [...produtos]
     .filter((p) => p.nome.toLowerCase().includes(search.toLowerCase()))
@@ -194,14 +196,14 @@ const StockTab = () => {
   };
 
   const handleAddProduct = async () => {
-    const err = await adicionarProduto(newNome, newTipologia, newLocalizacao, Number(newStock) || 0, Number(newMinimo) || 40);
+    const err = await adicionarProduto(newNome, newTipologia, newLocalizacao, Number(newStock) || 0, Number(newMinimo) || 40, newImagemUrl);
     if (err) {
       toast({ title: "Erro", description: err, variant: "destructive" });
       return;
     }
     toast({ title: "Produto adicionado", description: `"${newNome}" foi adicionado ao stock.` });
     setShowAddDialog(false);
-    setNewNome(""); setNewTipologia(""); setNewLocalizacao(""); setNewStock(""); setNewMinimo("40");
+    setNewNome(""); setNewTipologia(""); setNewLocalizacao(""); setNewStock(""); setNewMinimo("40"); setNewImagemUrl("");
   };
 
   const handleExportStock = () => {
@@ -225,12 +227,13 @@ const StockTab = () => {
     setNewLocalizacao(p.localizacao || "");
     setNewStock(String(p.stockAtual));
     setNewMinimo(String(p.stockMinimo));
+    setNewImagemUrl(p.imagemUrl || "");
     setShowEditDialog(true);
   };
 
   const handleEditProduct = () => {
     if (!editingProduct) return;
-    editarProduto(editingProduct.id, newNome, newTipologia, newLocalizacao, Number(newStock) || 0, Number(newMinimo) || 40);
+    editarProduto(editingProduct.id, newNome, newTipologia, newLocalizacao, Number(newStock) || 0, Number(newMinimo) || 40, newImagemUrl);
     toast({ title: "Produto atualizado", description: `"${newNome}" foi atualizado com sucesso.` });
     setShowEditDialog(false);
     setEditingProduct(null);
@@ -298,9 +301,13 @@ const StockTab = () => {
                 <TableRow key={p.id} className="hover:bg-muted/30">
                   <TableCell>
                     <div className="flex items-center gap-2">
-                      <div className="w-7 h-7 rounded-md bg-primary/10 flex items-center justify-center shrink-0">
-                        <Package className="w-3.5 h-3.5 text-primary" />
-                      </div>
+                      {p.imagemUrl ? (
+                        <img src={p.imagemUrl} alt={p.nome} className="w-7 h-7 rounded-md object-cover shrink-0" />
+                      ) : (
+                        <div className="w-7 h-7 rounded-md bg-primary/10 flex items-center justify-center shrink-0">
+                          <Package className="w-3.5 h-3.5 text-primary" />
+                        </div>
+                      )}
                       <span className="font-medium text-sm text-foreground">{p.nome}</span>
                     </div>
                   </TableCell>
@@ -369,8 +376,9 @@ const StockTab = () => {
               <div className="grid gap-2">
                 <Label>Stock Mínimo</Label>
                 <Input type="number" min={0} value={newMinimo} onChange={(e) => setNewMinimo(e.target.value)} placeholder="40" />
-              </div>
             </div>
+            <ImageUpload value={newImagemUrl} onChange={setNewImagemUrl} folder="stock" label="Imagem do Produto" size="md" />
+          </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowAddDialog(false)}>Cancelar</Button>
@@ -415,8 +423,9 @@ const StockTab = () => {
               <div className="grid gap-2">
                 <Label>Stock Mínimo</Label>
                 <Input type="number" min={0} value={newMinimo} onChange={(e) => setNewMinimo(e.target.value)} placeholder="40" />
-              </div>
             </div>
+            <ImageUpload value={newImagemUrl} onChange={setNewImagemUrl} folder="stock" label="Imagem do Produto" size="md" />
+          </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowEditDialog(false)}>Cancelar</Button>

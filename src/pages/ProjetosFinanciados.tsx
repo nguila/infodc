@@ -9,6 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Progress } from "@/components/ui/progress";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import ImageUpload from "@/components/ImageUpload";
 
 interface Parceiro {
   nome: string;
@@ -34,6 +35,7 @@ interface Projeto {
   responsavel: string;
   investimentoTotal: string;
   linkUtil: string;
+  imagemUrl?: string;
   parcerias: Parceiro[];
   equipa: MembroEquipa[];
 }
@@ -355,7 +357,7 @@ const ProjetosFinanciados = () => {
 
   const [form, setForm] = useState({
     titulo: "", descricao: "", codigo: "", programa: "", tipologia: "",
-    dataInicio: "", dataFim: "", responsavel: "", investimentoTotal: "", linkUtil: "",
+    dataInicio: "", dataFim: "", responsavel: "", investimentoTotal: "", linkUtil: "", imagemUrl: "",
   });
   const [formParcerias, setFormParcerias] = useState<Parceiro[]>([{ nome: "", tipo: "Parceiro" }]);
   const [formEquipa, setFormEquipa] = useState<MembroEquipa[]>([{ nome: "", funcao: "", departamento: "", alocacao: 100 }]);
@@ -375,7 +377,7 @@ const ProjetosFinanciados = () => {
     };
     setProjetos([novo, ...projetos]);
     setShowNew(false);
-    setForm({ titulo: "", descricao: "", codigo: "", programa: "", tipologia: "", dataInicio: "", dataFim: "", responsavel: "", investimentoTotal: "", linkUtil: "" });
+    setForm({ titulo: "", descricao: "", codigo: "", programa: "", tipologia: "", dataInicio: "", dataFim: "", responsavel: "", investimentoTotal: "", linkUtil: "", imagemUrl: "" });
     setFormParcerias([{ nome: "", tipo: "Parceiro" }]);
     setFormEquipa([{ nome: "", funcao: "", departamento: "", alocacao: 100 }]);
   };
@@ -435,6 +437,9 @@ const ProjetosFinanciados = () => {
                   <Input type="date" value={form.dataFim} onChange={(e) => setForm({ ...form, dataFim: e.target.value })} />
                 </div>
               </div>
+
+              {/* Imagem */}
+              <ImageUpload value={form.imagemUrl} onChange={(url) => setForm({ ...form, imagemUrl: url })} folder="projetos" label="Imagem do Projeto" size="lg" />
 
               {/* Parcerias */}
               <div>

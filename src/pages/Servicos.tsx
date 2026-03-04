@@ -3,15 +3,26 @@ import { BarChart3, Cpu, Scale, GraduationCap, CheckCircle2, X } from "lucide-re
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
+import ImageUpload from "@/components/ImageUpload";
 
-const servicos = [
+interface Servico {
+  id: string;
+  titulo: string;
+  icon: typeof BarChart3;
+  cor: string;
+  iconBg: string;
+  imagemUrl: string;
+  areas: string[];
+}
+
+const servicosDefault: Servico[] = [
   {
     id: "bi",
     titulo: "Análise de Dados & Business Intelligence",
     icon: BarChart3,
     cor: "bg-blue-500/10 text-blue-600",
     iconBg: "bg-blue-500",
-    
+    imagemUrl: "",
     areas: [
       "Desenvolvimento de dashboards personalizados",
       "Implementação de data warehouses",
@@ -29,7 +40,7 @@ const servicos = [
     icon: Cpu,
     cor: "bg-emerald-500/10 text-emerald-600",
     iconBg: "bg-emerald-500",
-    
+    imagemUrl: "",
     areas: [
       "Soluções de monitorização",
       "Sistemas de automação industrial",
@@ -45,7 +56,7 @@ const servicos = [
     icon: Scale,
     cor: "bg-amber-500/10 text-amber-600",
     iconBg: "bg-amber-500",
-    
+    imagemUrl: "",
     areas: [
       "Consultoria para aplicação de normativas (incl. ESG, RGPC)",
       "Consultoria em transformação digital e otimização de processos usando IA",
@@ -59,7 +70,7 @@ const servicos = [
     icon: GraduationCap,
     cor: "bg-purple-500/10 text-purple-600",
     iconBg: "bg-purple-500",
-    
+    imagemUrl: "",
     areas: [
       "Desenvolvimento pessoal",
       "Gestão e administração",
@@ -69,12 +80,20 @@ const servicos = [
   },
 ];
 
-const ServicoModal = ({ servico, onClose }: { servico: typeof servicos[0]; onClose: () => void }) => (
+const ServicoModal = ({ servico, onClose, onImageChange }: { servico: Servico; onClose: () => void; onImageChange: (id: string, url: string) => void }) => (
   <Dialog open onOpenChange={onClose}>
     <DialogContent className="max-w-lg">
       <button onClick={onClose} className="absolute top-4 right-4 text-muted-foreground hover:text-foreground transition-colors">
         <X className="w-4 h-4" />
       </button>
+
+      {servico.imagemUrl && (
+        <div className="relative h-40 w-full overflow-hidden rounded-t-lg -mt-6 -mx-6 mb-4" style={{ width: 'calc(100% + 3rem)' }}>
+          <img src={servico.imagemUrl} alt={servico.titulo} className="w-full h-full object-cover" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
+        </div>
+      )}
+
       <div className="flex items-center gap-4 mb-5">
         <div className={`flex items-center justify-center w-14 h-14 rounded-xl ${servico.cor}`}>
           <servico.icon className="w-7 h-7" />
@@ -93,13 +112,22 @@ const ServicoModal = ({ servico, onClose }: { servico: typeof servicos[0]; onClo
           ))}
         </ul>
       </div>
+
+      <div className="mt-4 pt-4 border-t border-border">
+        <ImageUpload value={servico.imagemUrl} onChange={(url) => onImageChange(servico.id, url)} folder="servicos" label="Imagem do Serviço" size="lg" />
+      </div>
     </DialogContent>
   </Dialog>
 );
 
 const Servicos = () => {
   const [selected, setSelected] = useState<string | null>(null);
+  const [servicos, setServicos] = useState<Servico[]>(servicosDefault);
   const servico = servicos.find((s) => s.id === selected);
+
+  const handleImageChange = (id: string, url: string) => {
+    setServicos((prev) => prev.map((s) => s.id === id ? { ...s, imagemUrl: url } : s));
+  };
 
   return (
     <div className="p-8 animate-fade-in">
@@ -111,9 +139,15 @@ const Servicos = () => {
         {servicos.map((s) => (
           <Card
             key={s.id}
-            className="hover:shadow-lg hover:border-primary/20 transition-all cursor-pointer group"
+            className="hover:shadow-lg hover:border-primary/20 transition-all cursor-pointer group overflow-hidden"
             onClick={() => setSelected(s.id)}
           >
+            {s.imagemUrl && (
+              <div className="relative h-32 overflow-hidden">
+                <img src={s.imagemUrl} alt={s.titulo} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent" />
+              </div>
+            )}
             <CardContent className="p-8 flex flex-col items-center text-center gap-4">
               <div className={`flex items-center justify-center w-16 h-16 rounded-2xl ${s.cor} group-hover:scale-110 transition-transform duration-200`}>
                 <s.icon className="w-8 h-8" />
@@ -129,7 +163,7 @@ const Servicos = () => {
         ))}
       </div>
 
-      {servico && <ServicoModal servico={servico} onClose={() => setSelected(null)} />}
+      {servico && <ServicoModal servico={servico} onClose={() => setSelected(null)} onImageChange={handleImageChange} />}
     </div>
   );
 };

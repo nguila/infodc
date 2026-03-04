@@ -8,6 +8,7 @@ export interface Produto {
   localizacao: string;
   stockAtual: number;
   stockMinimo: number;
+  imagemUrl: string;
 }
 
 export interface Tipologia {
@@ -120,7 +121,7 @@ async function fetchAll() {
 
   _produtos = (pRes.data || []).map((p: any) => ({
     id: p.id, nome: p.nome, tipologia: p.tipologia, localizacao: p.localizacao || "",
-    stockAtual: p.stock_atual, stockMinimo: p.stock_minimo,
+    stockAtual: p.stock_atual, stockMinimo: p.stock_minimo, imagemUrl: p.imagem_url || "",
   }));
 
   _tipologias = (tRes.data || []).map((t: any) => ({
@@ -254,22 +255,24 @@ export function useStockStore() {
     });
   };
 
-  const adicionarProduto = async (nome: string, tipologia: string, localizacao: string, stockAtual: number, stockMinimo: number): Promise<string | null> => {
+  const adicionarProduto = async (nome: string, tipologia: string, localizacao: string, stockAtual: number, stockMinimo: number, imagemUrl?: string): Promise<string | null> => {
     if (!nome.trim()) return "Nome do produto é obrigatório.";
     const existing = _produtos.find((p) => p.nome.toLowerCase() === nome.toLowerCase());
     if (existing) return `Produto "${nome}" já existe.`;
     const { error } = await supabase.from("stock_produtos").insert({
       nome: nome.trim(), tipologia: tipologia || "Geral", localizacao: localizacao || "",
       stock_atual: stockAtual || 0, stock_minimo: stockMinimo || DEFAULT_STOCK_MINIMO,
+      imagem_url: imagemUrl || "",
     });
     if (error) return error.message;
     await fetchAll();
     return null;
   };
 
-  const editarProduto = async (id: string, nome: string, tipologia: string, localizacao: string, stockAtual: number, stockMinimo: number) => {
+  const editarProduto = async (id: string, nome: string, tipologia: string, localizacao: string, stockAtual: number, stockMinimo: number, imagemUrl?: string) => {
     await supabase.from("stock_produtos").update({
       nome: nome.trim(), tipologia, localizacao, stock_atual: stockAtual, stock_minimo: stockMinimo,
+      imagem_url: imagemUrl || "",
     }).eq("id", id);
     await fetchAll();
   };

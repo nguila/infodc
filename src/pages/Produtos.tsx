@@ -4,6 +4,7 @@ import {
   ChevronDown, X, Plus, Trash2, UserCheck, Briefcase,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
+import ImageUpload from "@/components/ImageUpload";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -295,8 +296,10 @@ const NovoProdutoForm = ({ onSave, onCancel }: { onSave: (p: Omit<Produto, "id">
               <Textarea value={form.descricao} onChange={(e) => set("descricao", e.target.value)} placeholder="Descrição completa" rows={3} />
             </div>
             <div>
-              <Label>URL da Imagem</Label>
-              <Input value={form.imagemUrl} onChange={(e) => set("imagemUrl", e.target.value)} placeholder="/images/produto.png" />
+              <ImageUpload value={form.imagemUrl} onChange={(url) => set("imagemUrl", url)} folder="produtos" label="Imagem do Produto" size="lg" />
+            </div>
+            <div>
+              <ImageUpload value={form.logoUrl} onChange={(url) => set("logoUrl", url)} folder="produtos/logos" label="Logo" size="sm" />
             </div>
             <div>
               <Label>Estado</Label>
