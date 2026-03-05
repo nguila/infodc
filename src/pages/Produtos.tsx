@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef, KeyboardEvent } from "react";
 import {
   Search, Filter, Users, Building2, Calendar, Link2,
   ChevronDown, X, Plus, Trash2, UserCheck, Briefcase,
@@ -17,14 +17,15 @@ import {
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 
-const allTags = [
+const defaultTags = [
   "Passaporte Digital de Produto", "Inteligência Artificial", "Capital Natural",
   "OCR", "Cidades Inteligentes", "Sustentabilidade", "Rastreabilidade",
 ];
 
 const estados: Record<string, { label: string; class: string }> = {
-  ativo: { label: "Ativo", class: "bg-green-100 text-green-700" },
-  inativo: { label: "Inativo", class: "bg-gray-100 text-gray-500" },
+  lancado: { label: "Lançado", class: "bg-green-100 text-green-700" },
+  em_desenvolvimento: { label: "Em desenvolvimento", class: "bg-orange-100 text-orange-700" },
+  planeado: { label: "Planeado", class: "bg-blue-100 text-blue-700" },
 };
 
 export interface Produto {
@@ -39,6 +40,7 @@ export interface Produto {
   parceiros: string[];
   dataInicio: string;
   dataFim: string;
+  dataPrevisaoLancamento: string;
   links: { label: string; url: string }[];
   imagemUrl: string;
   logoUrl: string;
@@ -54,12 +56,13 @@ const defaultProdutos: Produto[] = [
     resumo: "Processamento automático de faturas com OCR e Inteligência Artificial",
     descricao: "A plataforma MyDigiFile processa as suas faturas de forma automática através de tecnologias de Reconhecimento Óptico de Caracteres (OCR) e Inteligência Artificial (IA), de forma rápida e segura.",
     tags: ["OCR", "Inteligência Artificial"],
-    estado: "ativo",
+    estado: "lancado",
     equipa: [],
     cliente: "",
     parceiros: [],
     dataInicio: "",
     dataFim: "",
+    dataPrevisaoLancamento: "",
     links: [{ label: "Saber mais", url: "https://www.mydigifile.ai/pt" }],
     imagemUrl: "/images/mydigifile.png",
     logoUrl: "/images/mydigifile.png",
@@ -73,12 +76,13 @@ const defaultProdutos: Produto[] = [
     resumo: "Sistema digital normalizado de identidade e rastreabilidade de produtos",
     descricao: "Um sistema digital normalizado que reúne, organiza e disponibiliza informação relevante sobre um produto ao longo de todo o seu ciclo de vida.",
     tags: ["Passaporte Digital de Produto", "Rastreabilidade"],
-    estado: "ativo",
+    estado: "lancado",
     equipa: [],
     cliente: "",
     parceiros: [],
     dataInicio: "",
     dataFim: "",
+    dataPrevisaoLancamento: "",
     links: [{ label: "Saber mais", url: "https://www.datacolab.pt/project/dpp-digital-product-passport/" }],
     imagemUrl: "/images/dpp.png",
     logoUrl: "/images/dpp.png",
@@ -92,12 +96,13 @@ const defaultProdutos: Produto[] = [
     resumo: "Plataforma de Data as a Service para territórios inteligentes",
     descricao: "Uma plataforma que centraliza serviços de Data as a Service (DaaS), permitindo recolher, integrar, analisar, monitorizar e comunicar dados de várias fontes.",
     tags: ["Cidades Inteligentes"],
-    estado: "ativo",
+    estado: "lancado",
     equipa: [],
     cliente: "",
     parceiros: [],
     dataInicio: "",
     dataFim: "",
+    dataPrevisaoLancamento: "",
     links: [{ label: "Saber mais", url: "https://www.inteligenciaterritorial.pt/" }],
     imagemUrl: "/images/cit.png",
     logoUrl: "/images/cit.png",
@@ -111,12 +116,13 @@ const defaultProdutos: Produto[] = [
     resumo: "Medição e compreensão de impactos nos ecossistemas através da tecnologia",
     descricao: "Uma iniciativa resultado da colaboração entre a NBI – Natural Business Intelligence e o Data CoLAB, orientada para revolucionar a forma de medir e compreender impactos nos ecossistemas através da tecnologia.",
     tags: ["Capital Natural", "Sustentabilidade"],
-    estado: "ativo",
+    estado: "lancado",
     equipa: [],
     cliente: "",
     parceiros: ["NBI – Natural Business Intelligence"],
     dataInicio: "",
     dataFim: "",
+    dataPrevisaoLancamento: "",
     links: [{ label: "Saber mais", url: "https://www.nvp.pt/" }],
     imagemUrl: "/images/nvp.png",
     logoUrl: "/images/nvp.png",
@@ -130,7 +136,7 @@ const NA = "Não aplicável";
 
 /* ───────── Modal de detalhe ───────── */
 const ProdutoModal = ({ produto, onClose }: { produto: Produto; onClose: () => void }) => {
-  const est = estados[produto.estado] ?? estados.ativo;
+  const est = estados[produto.estado] ?? estados.lancado;
   return (
     <Dialog open onOpenChange={onClose}>
       <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto p-0 [&>button.absolute]:hidden">
@@ -160,8 +166,18 @@ const ProdutoModal = ({ produto, onClose }: { produto: Produto; onClose: () => v
             <p className="text-sm text-foreground">{produto.descricao || NA}</p>
           </div>
 
+          {/* Data prevista de lançamento for non-launched */}
+          {(produto.estado === "em_desenvolvimento" || produto.estado === "planeado") && produto.dataPrevisaoLancamento && (
+            <div>
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">Data Prevista de Lançamento</p>
+              <div className="flex items-center gap-2">
+                <Calendar className="w-4 h-4 text-muted-foreground" />
+                <span className="text-sm">{produto.dataPrevisaoLancamento}</span>
+              </div>
+            </div>
+          )}
+
           <div className="grid grid-cols-2 gap-4">
-            {/* Responsável */}
             <div>
               <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Responsável do Produto</p>
               <div className="flex items-center gap-2">
@@ -169,8 +185,6 @@ const ProdutoModal = ({ produto, onClose }: { produto: Produto; onClose: () => v
                 <span className="text-sm">{produto.responsavel || NA}</span>
               </div>
             </div>
-
-            {/* Product Owner */}
             <div>
               <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Product Owner</p>
               <div className="flex items-center gap-2">
@@ -178,8 +192,6 @@ const ProdutoModal = ({ produto, onClose }: { produto: Produto; onClose: () => v
                 <span className="text-sm">{produto.productOwner || NA}</span>
               </div>
             </div>
-
-            {/* Comercial */}
             <div>
               <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Comercial Responsável</p>
               <div className="flex items-center gap-2">
@@ -187,8 +199,6 @@ const ProdutoModal = ({ produto, onClose }: { produto: Produto; onClose: () => v
                 <span className="text-sm">{produto.comercialResponsavel || NA}</span>
               </div>
             </div>
-
-            {/* Cliente */}
             <div>
               <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Cliente</p>
               <div className="flex items-center gap-2">
@@ -196,8 +206,6 @@ const ProdutoModal = ({ produto, onClose }: { produto: Produto; onClose: () => v
                 <span className="text-sm">{produto.cliente || NA}</span>
               </div>
             </div>
-
-            {/* Equipa */}
             <div className="col-span-2">
               <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Equipa</p>
               {produto.equipa.length > 0
@@ -214,7 +222,6 @@ const ProdutoModal = ({ produto, onClose }: { produto: Produto; onClose: () => v
             </div>
           </div>
 
-          {/* Parceiros */}
           <div>
             <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Parceiros</p>
             {produto.parceiros.length > 0
@@ -223,7 +230,6 @@ const ProdutoModal = ({ produto, onClose }: { produto: Produto; onClose: () => v
             }
           </div>
 
-          {/* Links */}
           <div>
             <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Links Úteis</p>
             {produto.links.length > 0
@@ -247,15 +253,25 @@ const ProdutoModal = ({ produto, onClose }: { produto: Produto; onClose: () => v
 
 /* ───────── Formulário de novo produto ───────── */
 const emptyForm = (): Omit<Produto, "id"> => ({
-  nome: "", resumo: "", descricao: "", tags: [], estado: "ativo",
+  nome: "", resumo: "", descricao: "", tags: [], estado: "lancado",
   equipa: [], cliente: "", parceiros: [], dataInicio: "", dataFim: "",
+  dataPrevisaoLancamento: "",
   links: [], imagemUrl: "", logoUrl: "", responsavel: "", productOwner: "",
   comercialResponsavel: "",
 });
 
-const NovoProdutoForm = ({ onSave, onCancel }: { onSave: (p: Omit<Produto, "id">) => void; onCancel: () => void }) => {
+const NovoProdutoForm = ({
+  onSave, onCancel, allTags, onAddTag,
+}: {
+  onSave: (p: Omit<Produto, "id">) => void;
+  onCancel: () => void;
+  allTags: string[];
+  onAddTag: (tag: string) => void;
+}) => {
   const [form, setForm] = useState(emptyForm());
   const [newLink, setNewLink] = useState({ label: "", url: "" });
+  const [tagInput, setTagInput] = useState("");
+  const tagInputRef = useRef<HTMLInputElement>(null);
 
   const set = <K extends keyof typeof form>(k: K, v: typeof form[K]) => setForm((f) => ({ ...f, [k]: v }));
 
@@ -266,6 +282,27 @@ const NovoProdutoForm = ({ onSave, onCancel }: { onSave: (p: Omit<Produto, "id">
   };
   const removeLink = (i: number) => set("links", form.links.filter((_, idx) => idx !== i));
 
+  const addTag = (tag: string) => {
+    const trimmed = tag.trim();
+    if (!trimmed || form.tags.includes(trimmed)) return;
+    if (!allTags.includes(trimmed)) onAddTag(trimmed);
+    set("tags", [...form.tags, trimmed]);
+    setTagInput("");
+  };
+
+  const removeTag = (tag: string) => set("tags", form.tags.filter((t) => t !== tag));
+
+  const handleTagKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter" || e.key === ",") {
+      e.preventDefault();
+      addTag(tagInput);
+    }
+  };
+
+  const filteredSuggestions = tagInput.trim()
+    ? allTags.filter((t) => t.toLowerCase().includes(tagInput.toLowerCase()) && !form.tags.includes(t))
+    : [];
+
   const handleSubmit = () => {
     if (!form.nome.trim() || !form.resumo.trim()) {
       toast.error("Nome e descrição curta são obrigatórios");
@@ -273,6 +310,8 @@ const NovoProdutoForm = ({ onSave, onCancel }: { onSave: (p: Omit<Produto, "id">
     }
     onSave(form);
   };
+
+  const showDateField = form.estado === "em_desenvolvimento" || form.estado === "planeado";
 
   return (
     <Dialog open onOpenChange={onCancel}>
@@ -306,24 +345,52 @@ const NovoProdutoForm = ({ onSave, onCancel }: { onSave: (p: Omit<Produto, "id">
               <Select value={form.estado} onValueChange={(v) => set("estado", v)}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="ativo">Ativo</SelectItem>
-                  <SelectItem value="inativo">Inativo</SelectItem>
+                  <SelectItem value="lancado">Lançado</SelectItem>
+                  <SelectItem value="em_desenvolvimento">Em desenvolvimento</SelectItem>
+                  <SelectItem value="planeado">Planeado</SelectItem>
                 </SelectContent>
               </Select>
             </div>
-            <div>
-              <Label>Categoria / Tags</Label>
-              <div className="flex flex-wrap gap-1.5 mt-1">
-                {allTags.map((tag) => (
-                  <Badge
-                    key={tag}
-                    variant={form.tags.includes(tag) ? "default" : "outline"}
-                    className="cursor-pointer text-[10px]"
-                    onClick={() => set("tags", form.tags.includes(tag) ? form.tags.filter((t) => t !== tag) : [...form.tags, tag])}
-                  >
+            {showDateField && (
+              <div>
+                <Label>Data prevista de lançamento</Label>
+                <Input type="date" value={form.dataPrevisaoLancamento} onChange={(e) => set("dataPrevisaoLancamento", e.target.value)} />
+              </div>
+            )}
+            <div className={showDateField ? "col-span-2" : ""}>
+              <Label>Tags</Label>
+              <div className="flex flex-wrap gap-1.5 mt-1 mb-2">
+                {form.tags.map((tag) => (
+                  <Badge key={tag} variant="default" className="text-[10px] gap-1 pr-1">
                     {tag}
+                    <button onClick={() => removeTag(tag)} className="ml-0.5 hover:text-destructive">
+                      <X className="w-3 h-3" />
+                    </button>
                   </Badge>
                 ))}
+              </div>
+              <div className="relative">
+                <Input
+                  ref={tagInputRef}
+                  value={tagInput}
+                  onChange={(e) => setTagInput(e.target.value)}
+                  onKeyDown={handleTagKeyDown}
+                  placeholder="Escreva e prima Enter para criar tag..."
+                  className="text-sm"
+                />
+                {filteredSuggestions.length > 0 && (
+                  <div className="absolute z-50 top-full left-0 right-0 mt-1 bg-popover border border-border rounded-md shadow-lg max-h-32 overflow-y-auto">
+                    {filteredSuggestions.map((s) => (
+                      <button
+                        key={s}
+                        className="w-full text-left px-3 py-1.5 text-sm hover:bg-accent transition-colors"
+                        onClick={() => addTag(s)}
+                      >
+                        {s}
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
             <div>
@@ -382,6 +449,7 @@ const Produtos = () => {
   const { user } = useAuth();
   const isAdmin = user?.perfil === "Administrador";
   const [produtos, setProdutos] = useState<Produto[]>(defaultProdutos);
+  const [allTags, setAllTags] = useState<string[]>(defaultTags);
   const [search, setSearch] = useState("");
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [selectedProduto, setSelectedProduto] = useState<Produto | null>(null);
@@ -403,6 +471,10 @@ const Produtos = () => {
     setProdutos((prev) => [...prev, newProduto]);
     setShowNewForm(false);
     toast.success("Produto criado com sucesso");
+  };
+
+  const handleAddTag = (tag: string) => {
+    setAllTags((prev) => prev.includes(tag) ? prev : [...prev, tag]);
   };
 
   return (
@@ -437,7 +509,7 @@ const Produtos = () => {
       {/* Products grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
         {filtered.map((p) => {
-          const est = estados[p.estado] ?? estados.ativo;
+          const est = estados[p.estado] ?? estados.lancado;
           const hasCliente = !!p.cliente;
           const hasPO = !!p.productOwner;
           const hasComercial = !!p.comercialResponsavel;
@@ -462,26 +534,22 @@ const Produtos = () => {
                 </div>
 
                 <div className="space-y-1.5 text-xs text-muted-foreground mb-4">
-                  {/* Responsável — always show */}
                   <div className="flex items-center gap-1.5">
                     <UserCheck className="w-3 h-3 shrink-0" />
                     <span className="truncate">{p.responsavel || NA}</span>
                   </div>
-                  {/* Product Owner — hide if empty */}
                   {hasPO && (
                     <div className="flex items-center gap-1.5">
                       <Briefcase className="w-3 h-3 shrink-0" />
                       <span className="truncate">{p.productOwner}</span>
                     </div>
                   )}
-                  {/* Cliente — hide if empty */}
                   {hasCliente && (
                     <div className="flex items-center gap-1.5">
                       <Building2 className="w-3 h-3 shrink-0" />
                       <span className="truncate">{p.cliente}</span>
                     </div>
                   )}
-                  {/* Comercial — hide if empty */}
                   {hasComercial && (
                     <div className="flex items-center gap-1.5">
                       <Users className="w-3 h-3 shrink-0" />
@@ -506,7 +574,7 @@ const Produtos = () => {
       )}
 
       {selectedProduto && <ProdutoModal produto={selectedProduto} onClose={() => setSelectedProduto(null)} />}
-      {showNewForm && <NovoProdutoForm onSave={handleCreateProduct} onCancel={() => setShowNewForm(false)} />}
+      {showNewForm && <NovoProdutoForm onSave={handleCreateProduct} onCancel={() => setShowNewForm(false)} allTags={allTags} onAddTag={handleAddTag} />}
     </div>
   );
 };

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Palette, Image, ExternalLink } from "lucide-react";
+import { Palette, Image, FileText, Video } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 
@@ -14,20 +14,36 @@ interface LinkItem {
 
 const links: LinkItem[] = [
   {
-    id: 2,
+    id: 1,
     nome: "Design e Comunicação",
     descricao: "Recursos de design e comunicação",
     icon: Palette,
-    url: "",
+    url: "https://associacaodatacolab.sharepoint.com/:f:/s/recursoshumanos/IgCGQgi7rEuBSp5nWhFNJ0w8AYS1zBfFQSmZts_SCif76Xk?e=8ALTS7",
     cor: "bg-purple-500/10 text-purple-600",
   },
   {
-    id: 3,
+    id: 2,
     nome: "Logos Data CoLAB",
     descricao: "Repositório de logótipos oficiais",
     icon: Image,
-    url: "",
+    url: "https://associacaodatacolab.sharepoint.com/:f:/s/recursoshumanos/IgD1zS7ccomqS4mv-mggFeSJAXlf85iCxH9cA2rsfDzJhw4?e=lEDQDR",
     cor: "bg-emerald-500/10 text-emerald-600",
+  },
+  {
+    id: 3,
+    nome: "Templates",
+    descricao: "Templates e modelos institucionais",
+    icon: FileText,
+    url: "https://associacaodatacolab.sharepoint.com/:f:/s/recursoshumanos/IgAvMqBcymd-TIdnxCgFIJqAAdxW9MzjGvAeiaKvOD9Qjtc?e=FhbVsb",
+    cor: "bg-amber-500/10 text-amber-600",
+  },
+  {
+    id: 4,
+    nome: "Vídeos",
+    descricao: "Repositório de vídeos institucionais",
+    icon: Video,
+    url: "https://associacaodatacolab.sharepoint.com/:f:/s/recursoshumanos/IgCbO9EF4VznQooRKmQnNYkdAdXaTaJW-_ChPphzN9AYY5A?e=NvSjAE",
+    cor: "bg-red-500/10 text-red-600",
   },
 ];
 
@@ -52,7 +68,7 @@ const OutrosLinks = () => {
         <p className="text-sm text-muted-foreground mt-1">Acesso rápido a recursos internos</p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
         {links.map((link) => (
           <Card
             key={link.id}

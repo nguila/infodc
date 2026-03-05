@@ -11,10 +11,8 @@ interface NewsletterItem {
 }
 
 const newsletters: NewsletterItem[] = [
-  { id: 1, titulo: "Newsletter Janeiro 2025", data: "2025-01-31", descricao: "Resumo de atividades e novidades de janeiro.", pdfUrl: "" },
-  { id: 2, titulo: "Newsletter Dezembro 2024", data: "2024-12-31", descricao: "Balanço anual e destaques de 2024.", pdfUrl: "" },
-  { id: 3, titulo: "Newsletter Novembro 2024", data: "2024-11-30", descricao: "Eventos e projetos em destaque.", pdfUrl: "" },
-  { id: 4, titulo: "Newsletter Outubro 2024", data: "2024-10-31", descricao: "Novas parcerias e formações.", pdfUrl: "" },
+  { id: 1, titulo: "Newsletter Dezembro 2024", data: "2024-12-31", descricao: "Balanço anual e destaques de 2024.", pdfUrl: "" },
+  { id: 2, titulo: "Newsletter Outubro 2024", data: "2024-10-31", descricao: "Novas parcerias e formações.", pdfUrl: "" },
 ];
 
 const Newsletter = () => (

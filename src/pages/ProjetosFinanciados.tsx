@@ -337,11 +337,17 @@ const ProjetoDetalheModal = ({ projeto, onClose }: { projeto: Projeto; onClose: 
           </div>
 
           {/* Download ficha */}
-          <div className="pt-2 border-t border-border">
+          <div className="pt-2 border-t border-border space-y-2">
             <Button variant="outline" className="gap-2 w-full" disabled>
               <Download className="w-4 h-4" /> Descarregar ficha de projeto
             </Button>
-            <p className="text-xs text-muted-foreground text-center mt-1">{NA}</p>
+            <p className="text-xs text-muted-foreground text-center">{NA}</p>
+
+            <Button variant="outline" className="gap-2 w-full" asChild>
+              <a href="/docs/Visus_Portefolio_Projetos_Financiados.pdf" target="_blank" rel="noopener noreferrer">
+                <Download className="w-4 h-4" /> Visus – Portefólio de Projetos Financiados
+              </a>
+            </Button>
           </div>
         </div>
       </DialogContent>
