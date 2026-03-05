@@ -1,9 +1,11 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { BarChart3, Cpu, Scale, GraduationCap, CheckCircle2, X } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import ImageUpload from "@/components/ImageUpload";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 interface Servico {
   id: string;
@@ -125,8 +127,27 @@ const Servicos = () => {
   const [servicos, setServicos] = useState<Servico[]>(servicosDefault);
   const servico = servicos.find((s) => s.id === selected);
 
-  const handleImageChange = (id: string, url: string) => {
+  useEffect(() => {
+    const loadImages = async () => {
+      const { data } = await supabase.from("servicos_imagens").select("id, imagem_url");
+      if (data && data.length > 0) {
+        setServicos((prev) =>
+          prev.map((s) => {
+            const row = data.find((d: any) => d.id === s.id);
+            return row && row.imagem_url ? { ...s, imagemUrl: row.imagem_url } : s;
+          })
+        );
+      }
+    };
+    loadImages();
+  }, []);
+
+  const handleImageChange = async (id: string, url: string) => {
     setServicos((prev) => prev.map((s) => s.id === id ? { ...s, imagemUrl: url } : s));
+    const { error } = await supabase.from("servicos_imagens").update({ imagem_url: url, updated_at: new Date().toISOString() }).eq("id", id);
+    if (error) {
+      toast.error("Erro ao guardar imagem");
+    }
   };
 
   return (

@@ -47,6 +47,24 @@ export type Database = {
         }
         Relationships: []
       }
+      servicos_imagens: {
+        Row: {
+          id: string
+          imagem_url: string
+          updated_at: string
+        }
+        Insert: {
+          id: string
+          imagem_url?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          imagem_url?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       stock_config: {
         Row: {
           key: string
