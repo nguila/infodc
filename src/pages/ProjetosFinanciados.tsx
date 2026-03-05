@@ -265,7 +265,7 @@ const tipoColors: Record<string, string> = {
 
 const NA = "Não aplicável";
 
-const ProjetoDetalheModal = ({ projeto, onClose }: { projeto: Projeto; onClose: () => void }) => {
+const ProjetoDetalheModal = ({ projeto, onClose, onImageChange }: { projeto: Projeto; onClose: () => void; onImageChange?: (id: number, url: string) => void }) => {
   const [copied, setCopied] = useState(false);
   const handleCopy = (text: string) => {
     navigator.clipboard.writeText(text);
@@ -349,6 +349,12 @@ const ProjetoDetalheModal = ({ projeto, onClose }: { projeto: Projeto; onClose: 
               </a>
             </Button>
           </div>
+
+          {onImageChange && (
+            <div className="pt-4 border-t border-border">
+              <ImageUpload value={projeto.imagemUrl || ""} onChange={(url) => onImageChange(projeto.id, url)} folder="projetos" label="Imagem do Projeto" size="lg" />
+            </div>
+          )}
         </div>
       </DialogContent>
     </Dialog>
@@ -579,7 +585,14 @@ const ProjetosFinanciados = () => {
       </div>
 
       {selectedProjeto && (
-        <ProjetoDetalheModal projeto={selectedProjeto} onClose={() => setSelectedProjeto(null)} />
+        <ProjetoDetalheModal
+          projeto={selectedProjeto}
+          onClose={() => setSelectedProjeto(null)}
+          onImageChange={(id, url) => {
+            setProjetos((prev) => prev.map((p) => p.id === id ? { ...p, imagemUrl: url } : p));
+            setSelectedProjeto((prev) => prev ? { ...prev, imagemUrl: url } : prev);
+          }}
+        />
       )}
     </div>
   );

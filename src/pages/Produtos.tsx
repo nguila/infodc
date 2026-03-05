@@ -135,7 +135,7 @@ const defaultProdutos: Produto[] = [
 const NA = "Não aplicável";
 
 /* ───────── Modal de detalhe ───────── */
-const ProdutoModal = ({ produto, onClose }: { produto: Produto; onClose: () => void }) => {
+const ProdutoModal = ({ produto, onClose, onImageChange }: { produto: Produto; onClose: () => void; onImageChange?: (id: number, field: "imagemUrl" | "logoUrl", url: string) => void }) => {
   const est = estados[produto.estado] ?? estados.lancado;
   return (
     <Dialog open onOpenChange={onClose}>
@@ -232,7 +232,7 @@ const ProdutoModal = ({ produto, onClose }: { produto: Produto; onClose: () => v
 
           <div>
             <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Links Úteis</p>
-            {produto.links.length > 0
+          {produto.links.length > 0
               ? <div className="flex flex-wrap gap-2">
                 {produto.links.map((l) => (
                   <Button key={l.label} variant="outline" size="sm" asChild className="gap-2">
@@ -245,6 +245,13 @@ const ProdutoModal = ({ produto, onClose }: { produto: Produto; onClose: () => v
               : <p className="text-sm text-muted-foreground">{NA}</p>
             }
           </div>
+
+          {onImageChange && (
+            <div className="pt-4 border-t border-border grid grid-cols-2 gap-4">
+              <ImageUpload value={produto.imagemUrl} onChange={(url) => onImageChange(produto.id, "imagemUrl", url)} folder="produtos" label="Imagem do Produto" size="lg" />
+              <ImageUpload value={produto.logoUrl} onChange={(url) => onImageChange(produto.id, "logoUrl", url)} folder="produtos/logos" label="Logo" size="sm" />
+            </div>
+          )}
         </div>
       </DialogContent>
     </Dialog>
@@ -573,7 +580,16 @@ const Produtos = () => {
         </div>
       )}
 
-      {selectedProduto && <ProdutoModal produto={selectedProduto} onClose={() => setSelectedProduto(null)} />}
+      {selectedProduto && (
+        <ProdutoModal
+          produto={selectedProduto}
+          onClose={() => setSelectedProduto(null)}
+          onImageChange={(id, field, url) => {
+            setProdutos((prev) => prev.map((p) => p.id === id ? { ...p, [field]: url } : p));
+            setSelectedProduto((prev) => prev ? { ...prev, [field]: url } : prev);
+          }}
+        />
+      )}
       {showNewForm && <NovoProdutoForm onSave={handleCreateProduct} onCancel={() => setShowNewForm(false)} allTags={allTags} onAddTag={handleAddTag} />}
     </div>
   );
