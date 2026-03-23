@@ -382,6 +382,17 @@ export function useStockStore() {
     });
 
     if (error) return error.message;
+
+    // Create movement records for each product in the pedido
+    for (const pp of pedidoData.produtos) {
+      await supabase.from("stock_movimentos").insert({
+        produto_id: pp.produtoId, produto_nome: pp.produtoNome,
+        tipo: "pedido", quantidade: pp.quantidade, data: pedidoData.dataPedido,
+        responsavel: pedidoData.responsavelLevantamento || pedidoData.nomeRequisitante,
+        evento: pedidoData.nomeEvento || pedidoData.tipoEvento || "",
+      });
+    }
+
     await fetchAll();
     return null;
   };
