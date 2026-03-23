@@ -409,12 +409,23 @@ export function useStockStore() {
             stock_atual: prod.stockAtual + pp.quantidade,
           }).eq("id", pp.produtoId);
         }
-        // Create cancelamento movement record
         await supabase.from("stock_movimentos").insert({
           produto_id: pp.produtoId, produto_nome: pp.produtoNome,
           tipo: "cancelamento", quantidade: pp.quantidade,
           data: format(new Date(), "yyyy-MM-dd"),
           responsavel: pedido.nomeRequisitante || pedido.responsavelLevantamento || "",
+          evento: pedido.nomeEvento || pedido.tipoEvento || "",
+        });
+      }
+    }
+
+    if (estado === "Entregue") {
+      for (const pp of pedido.produtos) {
+        await supabase.from("stock_movimentos").insert({
+          produto_id: pp.produtoId, produto_nome: pp.produtoNome,
+          tipo: "entrega", quantidade: pp.quantidade,
+          data: format(new Date(), "yyyy-MM-dd"),
+          responsavel: pedido.responsavelLevantamento || pedido.nomeRequisitante || "",
           evento: pedido.nomeEvento || pedido.tipoEvento || "",
         });
       }
