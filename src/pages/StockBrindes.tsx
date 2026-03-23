@@ -134,9 +134,13 @@ const OverviewTab = () => {
               {[...movimentos].reverse().slice(0, 20).map((mov) => (
                 <TableRow key={mov.id} className="hover:bg-muted/30">
                   <TableCell>
-                    <Badge className={`border-0 text-[11px] ${mov.tipo === "levantamento" ? "bg-amber-100 text-amber-700" : "bg-green-100 text-green-700"}`}>
-                      {mov.tipo === "levantamento" ? (
+                    <Badge className={`border-0 text-[11px] ${mov.tipo === "pedido" ? "bg-blue-100 text-blue-700" : mov.tipo === "cancelamento" ? "bg-red-100 text-red-700" : mov.tipo === "levantamento" ? "bg-amber-100 text-amber-700" : "bg-green-100 text-green-700"}`}>
+                      {mov.tipo === "pedido" ? (
                         <span className="flex items-center gap-1"><ArrowUpCircle className="w-3 h-3" /> Pedido</span>
+                      ) : mov.tipo === "cancelamento" ? (
+                        <span className="flex items-center gap-1"><RotateCcw className="w-3 h-3" /> Cancelamento</span>
+                      ) : mov.tipo === "levantamento" ? (
+                        <span className="flex items-center gap-1"><ArrowUpCircle className="w-3 h-3" /> Levantamento</span>
                       ) : (
                         <span className="flex items-center gap-1"><ArrowDownCircle className="w-3 h-3" /> Devolução</span>
                       )}
