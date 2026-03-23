@@ -672,53 +672,25 @@ const HistoricoTab = () => {
   const allRows: HistoricoRow[] = useMemo(() => {
     const rows: HistoricoRow[] = [];
 
-    pedidos.forEach((p) => {
-      p.produtos.forEach((pp) => {
-        rows.push({
-          data: p.criadoEm ? format(parseISO(p.criadoEm), "yyyy-MM-dd") : p.dataPedido,
-          documento: p.numero || `Pedido #${p.id}`,
-          evento: p.nomeEvento || p.tipoEvento,
-          produto: pp.produtoNome,
-          quantidade: pp.quantidade,
-          responsavel: p.nomeRequisitante || p.responsavelLevantamento,
-          tipo: "Pedido",
-          observacoes: p.observacoes || "",
-        });
-      });
-    });
-
-    movimentos.filter((m) => m.tipo === "devolucao").forEach((m) => {
+    // Use all movements from stock_movimentos (pedido, cancelamento, levantamento, devolucao)
+    movimentos.forEach((m) => {
+      const tipoLabel = m.tipo === "pedido" ? "Pedido" : m.tipo === "cancelamento" ? "Cancelamento" : m.tipo === "levantamento" ? "Levantamento" : "Devolução";
       rows.push({
         data: m.data,
-        documento: `Devolução #${m.id}`,
+        documento: m.tipo === "pedido" || m.tipo === "cancelamento"
+          ? pedidos.find((p) => p.produtos.some((pp) => pp.produtoId === m.produtoId) && p.nomeEvento === m.evento)?.numero || `${tipoLabel} #${m.id.slice(0, 8)}`
+          : `${tipoLabel} #${m.id.slice(0, 8)}`,
         evento: m.evento,
         produto: m.produtoNome,
         quantidade: m.quantidade,
         responsavel: m.responsavel,
-        tipo: "Devolução",
+        tipo: tipoLabel,
         observacoes: "",
       });
     });
 
-    // Also include concluded levantamentos not already covered
-    pedidosLevantamento.filter((p) => p.estado === "Concluído").forEach((p) => {
-      const alreadyHasMovimento = movimentos.some((m) => m.tipo === "levantamento" && m.produtoId === p.produtoId && m.evento === p.evento);
-      if (!alreadyHasMovimento) {
-        rows.push({
-          data: p.data,
-          documento: `Levantamento #${p.id}`,
-          evento: p.evento,
-          produto: p.produtoNome,
-          quantidade: p.quantidadeLevantada,
-          responsavel: p.responsavel,
-          tipo: "Pedido",
-          observacoes: `Devolvido: ${p.quantidadeDevolvida} | Consumo: ${p.consumoReal}`,
-        });
-      }
-    });
-
     return rows.sort((a, b) => b.data.localeCompare(a.data));
-  }, [pedidos, movimentos, pedidosLevantamento]);
+  }, [movimentos, pedidos]);
 
   // All unique collaborators
   const collaborators = useMemo(() => {
