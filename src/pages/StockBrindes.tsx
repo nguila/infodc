@@ -653,7 +653,7 @@ interface HistoricoRow {
   produto: string;
   quantidade: number;
   responsavel: string;
-  tipo: "Pedido" | "Devolução";
+  tipo: "Pedido" | "Devolução" | "Levantamento" | "Cancelamento";
   observacoes: string;
 }
 
