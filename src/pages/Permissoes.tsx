@@ -40,9 +40,23 @@ const perfilToRoleMap: Record<Perfil, string> = {
 };
 
 const allPermissoes = [
-  "Ver Produtos", "Editar Produtos", "Criar Pedidos", "Aprovar Pedidos",
-  "Gerir Stock", "Ver Relatórios", "Exportar Dados", "Importar Dados",
-  "Gerir Utilizadores", "Gerir Armazéns",
+  "Dashboard",
+  "Produtos",
+  "Serviços",
+  "Projetos Financiados",
+  "Stock - Overview",
+  "Stock - Produtos",
+  "Stock - Tipologias",
+  "Stock - Localizações",
+  "Stock - Novo Pedido",
+  "Stock - Listagem Pedidos",
+  "Stock - Devolução",
+  "Stock - Histórico",
+  "Comunicação - Novos Pedidos",
+  "Comunicação - Newsletter",
+  "Comunicação - Outros Links",
+  "Administração - Utilizadores",
+  "Administração - Permissões",
 ];
 
 const PERMISSIONS_KEY = "erp_user_permissions";
