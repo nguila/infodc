@@ -112,8 +112,13 @@ const Permissoes = () => {
   const getPermissionsForUser = (userId: string, perfil: Perfil): string[] => {
     if (userPermissions[userId]) return userPermissions[userId];
     if (perfil === "Administrador") return [...allPermissoes];
-    if (perfil === "Gestor") return ["Ver Produtos", "Editar Produtos", "Criar Pedidos", "Aprovar Pedidos", "Ver Relatórios"];
-    return ["Ver Produtos", "Criar Pedidos"];
+    if (perfil === "Gestor") return allPermissoes.filter(p => !p.startsWith("Administração"));
+    return [
+      "Dashboard", "Produtos", "Serviços", "Projetos Financiados",
+      "Stock - Overview", "Stock - Produtos", "Stock - Novo Pedido",
+      "Stock - Listagem Pedidos", "Stock - Devolução", "Stock - Histórico",
+      "Comunicação - Novos Pedidos", "Comunicação - Newsletter", "Comunicação - Outros Links",
+    ];
   };
 
   const openEdit = (user: UserWithRole) => {
