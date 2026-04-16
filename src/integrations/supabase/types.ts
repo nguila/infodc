@@ -14,6 +14,36 @@ export type Database = {
   }
   public: {
     Tables: {
+      notificacoes: {
+        Row: {
+          created_at: string
+          id: string
+          lida: boolean
+          mensagem: string
+          referencia: string | null
+          tipo: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          lida?: boolean
+          mensagem: string
+          referencia?: string | null
+          tipo?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          lida?: boolean
+          mensagem?: string
+          referencia?: string | null
+          tipo?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       produtos_imagens: {
         Row: {
           id: number
